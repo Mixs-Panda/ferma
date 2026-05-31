@@ -1,1 +1,1409 @@
-<h1>Моя ферма</h1>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🍰 Кафе Мечты 3D</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:#1a0a00;overflow:hidden;font-family:'Segoe UI',sans-serif;touch-action:none;}
+canvas{display:block;}
+#gameCanvas{position:fixed;top:0;left:0;}
+#nametagCanvas{position:fixed;top:0;left:0;pointer-events:none;z-index:5;}
+#nameScreen{
+  position:fixed;inset:0;z-index:100;
+  background:linear-gradient(135deg,#2d0a00 0%,#5c1a00 40%,#8b3a00 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  padding:20px;
+}
+#nameScreen h1{font-size:clamp(28px,7vw,52px);font-weight:900;color:#FFD93D;
+  text-shadow:0 0 30px #ff8c00,0 0 60px #ff4500;letter-spacing:2px;text-align:center;}
+#nameScreen p{color:rgba(255,220,150,0.8);font-size:15px;text-align:center;}
+.ns-card{background:rgba(0,0,0,0.4);border:2px solid rgba(255,180,50,0.3);
+  border-radius:20px;padding:20px 24px;width:min(360px,95vw);display:flex;flex-direction:column;gap:12px;}
+.ns-label{color:#FFD93D;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;}
+#nameInput{background:rgba(255,255,255,0.1);border:2px solid rgba(255,180,50,0.5);
+  border-radius:12px;padding:12px 18px;font-size:18px;font-weight:700;color:white;
+  outline:none;text-align:center;width:100%;transition:.2s;}
+#nameInput:focus{border-color:#FFD93D;box-shadow:0 0 20px rgba(255,180,50,0.3);}
+#nameInput::placeholder{color:rgba(255,255,255,0.3);}
+.color-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.copt{width:38px;height:38px;border-radius:50%;cursor:pointer;border:3px solid transparent;
+  transition:.2s;flex-shrink:0;}
+.copt.sel,.copt:hover{border-color:white;transform:scale(1.2);box-shadow:0 0 10px rgba(255,255,255,0.5);}
+#joinBtn{background:linear-gradient(135deg,#FF6B35,#FFD93D);border:none;border-radius:16px;
+  padding:16px;font-size:20px;font-weight:900;color:#1a0a00;cursor:pointer;width:100%;
+  box-shadow:0 8px 30px rgba(255,107,53,0.5);transition:.2s;letter-spacing:1px;}
+#joinBtn:active{transform:scale(0.97);}
+#hudTop{
+  position:fixed;top:0;left:0;right:0;z-index:20;
+  background:linear-gradient(180deg,rgba(20,5,0,0.95) 80%,transparent);
+  padding:8px 12px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  display:none;
+}
+.hud-pill{background:rgba(0,0,0,0.6);border:2px solid rgba(255,180,50,0.35);
+  border-radius:14px;padding:6px 12px;display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:700;color:white;white-space:nowrap;}
+.hud-pill .val{color:#FFD93D;font-size:15px;}
+.hud-pill .ico{font-size:18px;}
+#bagBtn{
+  position:fixed;top:72px;right:10px;z-index:25;
+  background:linear-gradient(135deg,#8b3a00,#c85a00);
+  border:3px solid #FFD93D;border-radius:50%;width:56px;height:56px;
+  font-size:26px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 4px 16px rgba(255,107,0,0.5);transition:.2s;display:none;
+}
+#bagBtn:active{transform:scale(0.92);}
+#bagBadge{position:absolute;top:-4px;right:-4px;background:#FF4757;color:white;
+  border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;}
+#inventory{
+  position:fixed;top:0;right:0;bottom:0;z-index:40;
+  width:min(320px,90vw);
+  background:linear-gradient(180deg,#1a0800,#2d1000);
+  border-left:3px solid rgba(255,180,50,0.4);
+  transform:translateX(100%);transition:.3s cubic-bezier(.34,1.56,.64,1);
+  display:flex;flex-direction:column;overflow:hidden;display:none;
+}
+#inventory.open{transform:translateX(0);}
+.inv-header{padding:16px;background:rgba(255,180,50,0.1);border-bottom:2px solid rgba(255,180,50,0.2);
+  display:flex;align-items:center;justify-content:space-between;}
+.inv-header h3{color:#FFD93D;font-size:18px;font-weight:900;}
+#invClose{background:none;border:none;color:white;font-size:22px;cursor:pointer;padding:4px 8px;}
+.inv-scroll{flex:1;overflow-y:auto;padding:12px;}
+.inv-slot{
+  background:rgba(255,255,255,0.05);border:2px solid rgba(255,180,50,0.2);
+  border-radius:14px;padding:10px 14px;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;cursor:pointer;transition:.2s;
+}
+.inv-slot:hover,.inv-slot.selected{border-color:#FFD93D;background:rgba(255,180,50,0.1);}
+.inv-slot .slot-ico{font-size:30px;width:42px;text-align:center;}
+.inv-slot .slot-info{flex:1;}
+.inv-slot .slot-name{font-weight:800;font-size:14px;color:white;}
+.inv-slot .slot-qty{font-size:12px;color:rgba(255,220,150,0.7);}
+.inv-slot .slot-action{font-size:11px;color:#FFD93D;font-weight:700;}
+#ordersPanel{
+  position:fixed;left:8px;top:50%;transform:translateY(-50%);z-index:20;
+  width:min(200px,45vw);display:none;
+}
+.orders-box{background:rgba(10,3,0,0.85);border:2px solid rgba(255,180,50,0.4);
+  border-radius:18px;padding:12px;backdrop-filter:blur(8px);}
+.orders-title{color:#FFD93D;font-weight:900;font-size:13px;text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.order-card{
+  background:rgba(255,180,50,0.07);border:2px solid rgba(255,180,50,0.2);
+  border-radius:12px;padding:8px 10px;margin-bottom:6px;
+  display:flex;align-items:center;gap:8px;cursor:pointer;transition:.2s;
+  animation:slideCard .3s cubic-bezier(.34,1.56,.64,1);
+}
+.order-card:hover{border-color:#FFD93D;background:rgba(255,180,50,0.15);}
+.order-card.accepted{border-color:#95E77E;background:rgba(149,231,126,0.1);}
+@keyframes slideCard{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
+.order-emo{font-size:26px;}
+.order-info .o-name{font-size:12px;font-weight:800;color:white;}
+.order-info .o-dish{font-size:11px;color:#FFD93D;}
+.order-info .o-pts{font-size:11px;color:#95E77E;font-weight:700;}
+.order-patience{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:4px;overflow:hidden;}
+.order-pat-fill{height:100%;border-radius:2px;transition:width .5s linear;}
+/* ── ACCEPT HINT ── */
+.order-hint{font-size:10px;color:#FFD93D;font-weight:700;text-align:center;margin-top:2px;}
+#actionBtn{
+  position:fixed;bottom:100px;right:12px;z-index:25;
+  width:70px;height:70px;background:linear-gradient(135deg,#FFD93D,#FF6B35);
+  border:none;border-radius:50%;font-size:30px;cursor:pointer;
+  box-shadow:0 6px 24px rgba(255,107,53,0.6);transition:.2s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#1a0a00;font-weight:900;font-size:12px;gap:2px;display:none;
+}
+#actionBtn:active{transform:scale(0.9);}
+#actionEmoji{font-size:28px;line-height:1;}
+#actionLabel{font-size:10px;font-weight:900;color:#1a0a00;}
+#joystickArea{
+  position:fixed;bottom:20px;left:20px;z-index:25;
+  width:130px;height:130px;display:none;
+}
+#joystickBase{
+  width:130px;height:130px;background:rgba(255,255,255,0.04);
+  border:2px solid rgba(255,255,255,0.12);border-radius:50%;
+  position:absolute;top:0;left:0;
+  backdrop-filter:blur(2px);
+}
+#joystickKnob{
+  width:52px;height:52px;background:rgba(255,220,100,0.18);
+  border:2px solid rgba(255,220,100,0.3);
+  border-radius:50%;position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 12px rgba(255,180,50,0.15);transition:box-shadow .1s;
+}
+#storeBtn{
+  position:fixed;bottom:20px;right:12px;z-index:25;
+  background:linear-gradient(135deg,#2d8a2d,#4CAF50);
+  border:3px solid #95E77E;border-radius:50%;width:56px;height:56px;
+  font-size:26px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 4px 16px rgba(76,175,80,0.5);transition:.2s;display:none;
+}
+#storeBtn:active{transform:scale(0.92);}
+#storePanel{
+  position:fixed;inset:0;z-index:50;
+  background:rgba(0,0,0,0.75);display:none;align-items:flex-end;
+}
+#storePanel.open{display:flex;}
+.store-sheet{
+  background:linear-gradient(180deg,#1a0800,#2d1000);
+  border-radius:24px 24px 0 0;border-top:3px solid rgba(255,180,50,0.4);
+  width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;
+  animation:sheetUp .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.store-header{padding:16px 20px;background:rgba(255,180,50,0.08);
+  border-bottom:2px solid rgba(255,180,50,0.2);
+  display:flex;align-items:center;justify-content:space-between;}
+.store-header h3{color:#FFD93D;font-size:20px;font-weight:900;}
+#storeClose{background:none;border:none;color:white;font-size:24px;cursor:pointer;}
+.store-scroll{flex:1;overflow-y:auto;padding:16px;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+.store-item{
+  background:rgba(255,255,255,0.05);border:2px solid rgba(255,180,50,0.2);
+  border-radius:16px;padding:14px;text-align:center;cursor:pointer;transition:.2s;
+}
+.store-item:hover{border-color:#FFD93D;background:rgba(255,180,50,0.1);transform:translateY(-2px);}
+.store-item.bought{border-color:#95E77E;background:rgba(149,231,126,0.08);}
+.store-item .si-ico{font-size:40px;margin-bottom:6px;}
+.store-item .si-name{font-weight:800;font-size:14px;color:white;margin-bottom:4px;}
+.store-item .si-desc{font-size:11px;color:rgba(255,220,150,0.7);margin-bottom:8px;}
+.store-item .si-price{font-size:15px;font-weight:900;color:#FFD93D;}
+.store-item .si-price.free{color:#95E77E;}
+#notifBox{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:60;
+  display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;}
+.notif{
+  background:rgba(0,0,0,0.85);color:white;border-radius:16px;
+  padding:10px 20px;font-weight:700;font-size:14px;
+  animation:nIn .3s cubic-bezier(.34,1.56,.64,1),nOut .3s ease 2.2s forwards;
+  border:2px solid rgba(255,180,50,0.3);white-space:nowrap;
+}
+.notif.g{border-color:#95E77E;background:rgba(0,60,10,0.9);}
+.notif.r{border-color:#FF4757;background:rgba(60,0,10,0.9);}
+.notif.y{border-color:#FFD93D;background:rgba(60,40,0,0.9);}
+@keyframes nIn{from{transform:scale(0) translateY(-10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+@keyframes nOut{to{transform:translateY(-20px);opacity:0}}
+.cpop{position:fixed;pointer-events:none;z-index:70;font-size:18px;font-weight:900;
+  color:#FFD93D;text-shadow:0 0 10px #FF6B35;
+  animation:cpFloat 1.2s ease forwards;}
+@keyframes cpFloat{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-70px) scale(1.4);opacity:0}}
+#saveInd{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);
+  color:rgba(255,180,50,0.5);font-size:11px;font-weight:700;z-index:10;display:none;}
+#flash{position:fixed;inset:0;background:white;opacity:0;pointer-events:none;
+  z-index:90;transition:opacity .3s;}
+.skin-row{display:flex;gap:10px;justify-content:center;}
+.skin-opt{background:rgba(255,255,255,0.08);border:3px solid rgba(255,180,50,0.3);
+  border-radius:14px;padding:10px 14px;cursor:pointer;text-align:center;
+  font-size:26px;color:white;transition:.2s;flex:1;min-width:70px;}
+.skin-opt span{display:block;font-size:11px;font-weight:700;color:rgba(255,220,150,0.8);margin-top:4px;}
+.skin-opt.sel{border-color:#FFD93D;background:rgba(255,180,50,0.15);transform:scale(1.05);}
+.skin-opt:hover{border-color:#FFD93D;}
+#minimap{position:fixed;top:56px;right:8px;z-index:20;
+  width:90px;height:90px;display:none;}
+#minimapCanvas{width:90px;height:90px;border-radius:12px;
+  border:2px solid rgba(255,180,50,0.4);background:rgba(0,0,0,0.6);}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<canvas id="nametagCanvas"></canvas>
+
+<div id="nameScreen">
+  <h1>🍰 Кафе Мечты 3D</h1>
+  <p>Свой ресторанный бизнес в 3D!</p>
+  <div class="ns-card">
+    <div class="ns-label">Твоё имя</div>
+    <input id="nameInput" placeholder="Введи имя..." maxlength="14" autocomplete="off"/>
+    <div class="ns-label">Скин персонажа</div>
+    <div class="skin-row" id="skinPicker">
+      <div class="skin-opt sel" data-skin="normal">😊<br><span>Обычный</span></div>
+      <div class="skin-opt" data-skin="panda">🐼<br><span>Панда</span></div>
+      <div class="skin-opt" data-skin="redblack">🔴<br><span>Крутой</span></div>
+    </div>
+    <div class="ns-label" id="colorLabel">Цвет (для обычного)</div>
+    <div class="color-row" id="colorPicker"></div>
+    <button id="joinBtn">🚀 НАЧАТЬ ИГРУ</button>
+  </div>
+</div>
+
+<div id="hudTop">
+  <div class="hud-pill"><span class="ico">🪙</span><span id="hCoins" class="val">0</span></div>
+  <div class="hud-pill"><span class="ico">⭐</span><span id="hScore" class="val">0</span></div>
+  <div class="hud-pill"><span class="ico">🍽️</span>Ур.<span id="hLevel" class="val">1</span></div>
+  <div class="hud-pill" id="heldPill" style="display:none"><span id="heldIco" class="ico">🍕</span><span id="heldName" class="val">—</span></div>
+</div>
+
+<div id="bagBtn" style="display:none"><span>🎒</span><span id="bagBadge">0</span></div>
+<div id="inventory" style="display:none">
+  <div class="inv-header">
+    <h3>🎒 Сумка</h3>
+    <button id="invClose">✕</button>
+  </div>
+  <div class="inv-scroll" id="invSlots"></div>
+</div>
+
+<div id="ordersPanel">
+  <div class="orders-box">
+    <div class="orders-title">📋 Заказы</div>
+    <div id="ordersList"></div>
+  </div>
+</div>
+
+<button id="actionBtn" style="display:none">
+  <span id="actionEmoji">⚡</span>
+  <span id="actionLabel">ВЗЯТЬ</span>
+</button>
+
+<div id="joystickArea" style="display:none">
+  <div id="joystickBase"></div>
+  <div id="joystickKnob"></div>
+</div>
+
+<div id="storeBtn" style="display:none">🏪</div>
+<div id="storePanel">
+  <div class="store-sheet">
+    <div class="store-header">
+      <h3>🏪 Магазин</h3>
+      <button id="storeClose">✕</button>
+    </div>
+    <div class="store-scroll" id="storeItems"></div>
+  </div>
+</div>
+
+<div id="saveInd">💾 Сохранено</div>
+<div id="minimap" style="display:none">
+  <canvas id="minimapCanvas" width="90" height="90"></canvas>
+</div>
+<div id="notifBox"></div>
+<div id="flash"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const SPAWN = {x:0, y:0, z:0};
+const PCOLORS = ['#FF6B35','#FFD93D','#4ECDC4','#95E77E','#C77DFF','#FF6B9D','#00CEC9','#FDCB6E','#E17055','#74B9FF'];
+const FOOD_ITEMS = [
+  {id:'coffee',   name:'Кофе',        ico:'☕', pts:20,  col:0x6F4E37, pickupRange:2.5},
+  {id:'cake',     name:'Торт',        ico:'🎂', pts:50,  col:0xFF69B4, pickupRange:2.5},
+  {id:'burger',   name:'Бургер',      ico:'🍔', pts:35,  col:0xD2691E, pickupRange:2.5},
+  {id:'pizza',    name:'Пицца',       ico:'🍕', pts:45,  col:0xFF6347, pickupRange:2.5},
+  {id:'sushi',    name:'Суши',        ico:'🍣', pts:60,  col:0x98FF98, pickupRange:2.5},
+  {id:'icecream', name:'Мороженое',   ico:'🍦', pts:25,  col:0xFFF0F5, pickupRange:2.5},
+  {id:'juice',    name:'Сок',         ico:'🥤', pts:15,  col:0xFFD700, pickupRange:2.5},
+  {id:'pasta',    name:'Паста',       ico:'🍝', pts:40,  col:0xFFE4B5, pickupRange:2.5},
+];
+const NPC_NAMES = ['Миша','Катя','Вася','Оля','Дима','Лена','Коля','Маша','Петя','Соня','Ваня','Таня','Рома','Алина'];
+const NPC_EMO   = ['😊','😄','🤩','😋','🥳','😍','🤗','😎','🥰','😁'];
+const STORE_ITEMS = [
+  {id:'table2',  name:'Стол #2',   desc:'Второй стол для гостей',   ico:'🪑', price:100, type:'table'},
+  {id:'table3',  name:'Стол #3',   desc:'Третий стол для гостей',   ico:'🪑', price:200, type:'table'},
+  {id:'table4',  name:'Стол #4',   desc:'Четвёртый стол',           ico:'🪑', price:350, type:'table'},
+  {id:'table5',  name:'Стол #5',   desc:'Пятый стол',               ico:'🪑', price:500, type:'table'},
+  {id:'counter2',name:'Прилавок 2',desc:'Ещё один прилавок',        ico:'🍳', price:300, type:'counter'},
+  {id:'decor1',  name:'Цветы',     desc:'Украшение зала',            ico:'🌸', price:80,  type:'decor'},
+  {id:'decor2',  name:'Картины',   desc:'Красивые картины',          ico:'🖼️', price:120, type:'decor'},
+  {id:'decor3',  name:'Аквариум',  desc:'Живой уголок природы',     ico:'🐠', price:250, type:'decor'},
+  {id:'plant',   name:'Пальма',    desc:'Тропическое дерево',        ico:'🌴', price:150, type:'decor'},
+  {id:'lamp',    name:'Люстра',    desc:'Шикарное освещение',        ico:'💡', price:90,  type:'decor'},
+];
+
+// ═══════════════════════════════════════════════════════════
+//  SAVE / LOAD
+// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════
+//  JSONBIN SERVER SAVE / LOAD
+// ═══════════════════════════════════
+const JSONBIN_KEY = '$2a$10$i/Pvb3ptjSJ6H66AooWHUEGjH0JYPgG4AZlAgCtxP42jgEZy7yJe66';
+const JSONBIN_BIN = '6a1c873bddf5aa59f77cac25';
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_BIN;
+
+async function saveGame(){
+  const data = {
+    coins:G.coins, score:G.score, level:G.level,
+    bought:G.bought, playerName:G.playerName, playerColor:G.playerColor
+  };
+  try{ localStorage.setItem('cafe3d_save', JSON.stringify(data)); }catch(e){}
+  try{
+    const si = document.getElementById('saveInd');
+    si.textContent='💾 Сохраняю...'; si.style.display='block';
+    await fetch(JSONBIN_URL, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
+      body: JSON.stringify(data)
+    });
+    si.textContent='☁️ Сохранено!';
+    clearTimeout(si._t);
+    si._t=setTimeout(()=>si.style.display='none',2000);
+  }catch(e){
+    const si = document.getElementById('saveInd');
+    si.textContent='⚠️ Локальное сохранение';
+    clearTimeout(si._t);
+    si._t=setTimeout(()=>si.style.display='none',2000);
+  }
+}
+
+async function loadGame(){
+  try{
+    const res = await fetch(JSONBIN_URL + '/latest', {
+      headers:{'X-Master-Key':JSONBIN_KEY}
+    });
+    const json = await res.json();
+    const d = json.record || {};
+    if(d.coins!==undefined) G.coins=d.coins;
+    if(d.score!==undefined) G.score=d.score;
+    if(d.level!==undefined) G.level=d.level;
+    if(d.bought) G.bought=d.bought;
+    if(d.playerName) G.playerName=d.playerName;
+    if(d.playerColor) G.playerColor=d.playerColor;
+    notify('☁️ Прогресс загружен!','g');
+    return;
+  }catch(e){}
+  try{
+    const d=JSON.parse(localStorage.getItem('cafe3d_save')||'{}');
+    if(d.coins!==undefined) G.coins=d.coins;
+    if(d.score!==undefined) G.score=d.score;
+    if(d.level!==undefined) G.level=d.level;
+    if(d.bought) G.bought=d.bought;
+    if(d.playerName) G.playerName=d.playerName;
+    if(d.playerColor) G.playerColor=d.playerColor;
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════
+const G = {
+  started:false,
+  playerName:'Игрок', playerColor:'#FF6B35',
+  coins:50, score:0, level:1,
+  bought:[],
+  bag:[],
+  heldItem:null,
+  orders:[],
+  npcs:[],
+  decorMeshes:[],
+  counterZones:[],
+  tableZones:[],
+  keys:{},
+  joystick:{x:0,y:0, active:false, startX:0, startY:0},
+  yaw:0, pitch:0.3,
+  velY:0, onGround:true,
+  lastTime:performance.now(),
+  fps:60, frameCount:0, fpsTimer:0,
+  nearInteractable:null,
+  selectedColorIdx:0,
+  selectedSkin:'normal',
+};
+
+// ═══════════════════════════════════════════════════════════
+//  THREE SETUP
+// ═══════════════════════════════════════════════════════════
+const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('gameCanvas'),antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.setSize(innerWidth,innerHeight);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.1;
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog(0xfff4e0,20,60);
+scene.background=new THREE.Color(0xfff4e0);
+
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,150);
+camera.position.set(0,8,12);
+
+// ═══════════════════════════════════════════════════════════
+//  LIGHTING
+// ═══════════════════════════════════════════════════════════
+const sun=new THREE.DirectionalLight(0xfff5e0,1.6);
+sun.position.set(15,30,10); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-40; sun.shadow.camera.right=40;
+sun.shadow.camera.top=40; sun.shadow.camera.bottom=-40;
+sun.shadow.camera.far=100;
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0xffe0b0,0.9));
+scene.add(new THREE.HemisphereLight(0xfff5e0,0x8b7355,0.5));
+
+// ═══════════════════════════════════════════════════════════
+//  HELPER: BOX
+// ═══════════════════════════════════════════════════════════
+function box(w,h,d,color,x,y,z,opts={}){
+  const m=new THREE.Mesh(
+    new THREE.BoxGeometry(w,h,d),
+    new THREE.MeshLambertMaterial({color,...(opts.mat||{})})
+  );
+  m.position.set(x,y+h/2,z);
+  m.castShadow=opts.noShadow!==true;
+  m.receiveShadow=true;
+  if(opts.parent) opts.parent.add(m); else scene.add(m);
+  return m;
+}
+function cyl(rt,rb,h,seg,color,x,y,z){
+  const m=new THREE.Mesh(
+    new THREE.CylinderGeometry(rt,rb,h,seg),
+    new THREE.MeshLambertMaterial({color})
+  );
+  m.position.set(x,y+h/2,z);
+  m.castShadow=true; m.receiveShadow=true;
+  scene.add(m); return m;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  WORLD BUILD
+// ═══════════════════════════════════════════════════════════
+const floorGeo=new THREE.PlaneGeometry(60,60);
+const floorMat=new THREE.MeshLambertMaterial({color:0xF5DEB3});
+const floor=new THREE.Mesh(floorGeo,floorMat);
+floor.rotation.x=-Math.PI/2; floor.receiveShadow=true;
+scene.add(floor);
+
+for(let i=-5;i<5;i++) for(let j=-5;j<5;j++){
+  if((i+j)%2===0){
+    const tile=new THREE.Mesh(
+      new THREE.PlaneGeometry(5.98,5.98),
+      new THREE.MeshLambertMaterial({color:0xFAEFD5})
+    );
+    tile.rotation.x=-Math.PI/2; tile.position.set(i*6+3,0.01,j*6+3);
+    tile.receiveShadow=true; scene.add(tile);
+  }
+}
+
+function buildRoom(){
+  const wMat=new THREE.MeshLambertMaterial({color:0xFFF8F0});
+  const wh=5;
+  const bw=new THREE.Mesh(new THREE.BoxGeometry(28,wh,0.4),wMat);
+  bw.position.set(0,wh/2,-14); scene.add(bw);
+  const lw=new THREE.Mesh(new THREE.BoxGeometry(0.4,wh,28),wMat);
+  lw.position.set(-14,wh/2,0); scene.add(lw);
+  const rw=lw.clone(); rw.position.set(14,wh/2,0); scene.add(rw);
+  for(const [x,z,rx] of [[0,-.14+.01,0],[-14+.01,0,Math.PI/2],[14-.01,0,Math.PI/2]]){
+    const bb=new THREE.Mesh(new THREE.BoxGeometry(28,0.3,0.15),new THREE.MeshLambertMaterial({color:0xD4A96A}));
+    bb.position.set(x,0.15,z); bb.rotation.y=rx; scene.add(bb);
+  }
+  const ceil=new THREE.Mesh(new THREE.BoxGeometry(28,0.3,28),new THREE.MeshLambertMaterial({color:0xFFF5E6}));
+  ceil.position.set(0,wh,0); scene.add(ceil);
+  for(const wx of [-7,0,7]){
+    box(3,2.5,0.3,0xFFE0B0,wx,1,-13.6);
+    box(3.4,0.2,0.35,0xD4A96A,wx,2.7,-13.55);
+    box(0.2,2.5,0.35,0xD4A96A,wx-1.6,1,-13.55);
+    box(0.2,2.5,0.35,0xD4A96A,wx+1.6,1,-13.55);
+  }
+  box(2.5,4,0.4,0xD4A96A,0,0,13.8);
+  const fw=new THREE.MeshLambertMaterial({color:0xFFF8F0});
+  const fl2=new THREE.Mesh(new THREE.BoxGeometry(11,5,0.4),fw); fl2.position.set(-8.5,2.5,14); scene.add(fl2);
+  const fr2=fl2.clone(); fr2.position.set(8.5,2.5,14); scene.add(fr2);
+}
+buildRoom();
+
+function buildCounter(){
+  box(8,1.1,1.8,0x8B4513,-5,0,-10);
+  box(8.2,0.15,2,0xD4A96A,-5,1.1,-10);
+  const stations=[
+    {x:-8,z:-10,food:'coffee',   color:0x6F4E37},
+    {x:-6,z:-10,food:'cake',     color:0xFF69B4},
+    {x:-4,z:-10,food:'burger',   color:0xD2691E},
+    {x:-2,z:-10,food:'pizza',    color:0xFF6347},
+  ];
+  stations.forEach(s=>{
+    box(0.9,0.8,0.9,s.color,s.x,1.1,s.z);
+    box(0.7,0.05,0.7,0xFFFFFF,s.x,1.95,s.z);
+    const fi=FOOD_ITEMS.find(f=>f.id===s.food);
+    G.counterZones.push({pos:new THREE.Vector3(s.x,0,s.z), foodId:s.food, ico:fi.ico});
+  });
+  box(5,1.1,1.8,0x8B4513,7,0,-10);
+  box(5.2,0.15,2,0xD4A96A,7,1.1,-10);
+  const stations2=[
+    {x:5.5,z:-10,food:'sushi',    color:0x98FF98},
+    {x:7,  z:-10,food:'icecream', color:0xFFF0F5},
+    {x:8.5,z:-10,food:'juice',    color:0xFFD700},
+  ];
+  stations2.forEach(s=>{
+    box(0.9,0.8,0.9,s.color,s.x,1.1,s.z);
+    box(0.7,0.05,0.7,0xFFFFFF,s.x,1.95,s.z);
+    const fi=FOOD_ITEMS.find(f=>f.id===s.food);
+    G.counterZones.push({pos:new THREE.Vector3(s.x,0,s.z), foodId:s.food, ico:fi.ico});
+  });
+  box(2,1.4,1.5,0x555555,-5,0,-12.5);
+  box(1.8,0.1,1.3,0x333333,-5,1.4,-12.5);
+  for(const [bx,bz] of [[-5.5,-12.5],[-4.5,-12.5]]){
+    cyl(0.25,0.25,0.15,16,0x222222,bx,1.5,bz);
+    cyl(0.15,0.15,0.3,8,0xFF4444,bx,1.65,bz);
+  }
+}
+buildCounter();
+
+const tableObjs=[];
+const TABLE_POSITIONS=[
+  {x:-6,z:-2},{x:0,z:-2},{x:6,z:-2},
+  {x:-6,z:4},{x:0,z:4},{x:6,z:4},
+];
+function buildTable(pos,idx){
+  const g=new THREE.Group();
+  box(2.2,0.12,1.4,0x8B4513,0,0.85,0,{parent:g});
+  box(2.4,0.08,1.6,0xA0522D,0,0.97,0,{parent:g});
+  for(const [lx,lz] of [[-0.9,0.55],[0.9,0.55],[-0.9,-0.55],[0.9,-0.55]]){
+    box(0.1,0.85,0.1,0x6B3A2A,lx,0,lz,{parent:g});
+  }
+  for(const [cx,cz,ry] of [[-1.5,0,0],[1.5,0,Math.PI],[0,-1.1,Math.PI/2],[0,1.1,-Math.PI/2]]){
+    const cg=new THREE.Group();
+    box(0.7,0.08,0.7,0xC19A6B,0,0.48,0,{parent:cg});
+    box(0.7,0.55,0.07,0xA0522D,0,0.8,-0.3,{parent:cg});
+    for(const [llx,llz] of [[-0.28,0.28],[0.28,0.28],[-0.28,-0.28],[0.28,-0.28]])
+      box(0.06,0.48,0.06,0x8B6914,llx,0,llz,{parent:cg});
+    cg.position.set(cx,0,cz); cg.rotation.y=ry;
+    g.add(cg);
+  }
+  box(1.8,0.02,1.1,0xFFF9F0,0,0.98,0,{parent:g});
+  cyl(0.06,0.06,0.25,8,0xFFF8DC,0,0.99,0);
+  g.position.set(pos.x,0,pos.z);
+  scene.add(g);
+  tableObjs.push(g);
+  G.tableZones.push({pos:new THREE.Vector3(pos.x,0,pos.z), mesh:g, occupied:false, npc:null, idx});
+  return g;
+}
+TABLE_POSITIONS.forEach((p,i)=>{
+  if(i===0 || G.bought.includes('table'+(i+1))) buildTable(p,i);
+});
+
+// Spawn platform
+box(4,0.25,4,0xFF6B35,0,0,0);
+box(3.5,0.1,3.5,0xFFD93D,0,0.25,0);
+
+function addDecor(){
+  for(const [x,z] of [[-12,11],[12,11],[-12,-12],[12,-12],[0,12]]){
+    cyl(0.3,0.35,0.5,8,0xA0522D,x,0,z);
+    const foliage=new THREE.Mesh(new THREE.SphereGeometry(0.7,8,6),new THREE.MeshLambertMaterial({color:0x228B22}));
+    foliage.position.set(x,1.2,z); foliage.castShadow=true; scene.add(foliage);
+    cyl(0.05,0.05,0.7,6,0x228B22,x,0.5,z);
+  }
+  for(const [lx,lz] of [[-5,-5],[5,-5],[0,2],[-5,5],[5,5]]){
+    box(0.1,1.5,0.1,0x888888,lx,3.5,lz);
+    const shade=new THREE.Mesh(new THREE.ConeGeometry(0.4,0.4,12,1,true),new THREE.MeshLambertMaterial({color:0xFFD700,side:THREE.DoubleSide}));
+    shade.position.set(lx,3,lz); scene.add(shade);
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.15,8,8),new THREE.MeshLambertMaterial({color:0xFFFF99,emissive:0xFFFF99,emissiveIntensity:0.8}));
+    bulb.position.set(lx,2.9,lz); scene.add(bulb);
+    const ptLight=new THREE.PointLight(0xFFF5C0,0.6,6);
+    ptLight.position.set(lx,2.8,lz); scene.add(ptLight);
+  }
+  for(const [ax,az,ay] of [[-8,2.5,-13.7],[0,2.5,-13.7],[8,2.5,-13.7]]){
+    const frame=new THREE.Mesh(new THREE.BoxGeometry(2,1.5,0.1),new THREE.MeshLambertMaterial({color:0xD4A96A}));
+    frame.position.set(ax,ay,az); scene.add(frame);
+    const art=new THREE.Mesh(new THREE.BoxGeometry(1.7,1.2,0.12),
+      new THREE.MeshLambertMaterial({color:[0xFF6B9D,0x4ECDC4,0xFFD93D][Math.floor(ax/8+1)]}));
+    art.position.set(ax,ay,az+0.05); scene.add(art);
+  }
+  box(2,1.2,0.6,0x4FC3F7,11,0,-13);
+  const water2=new THREE.Mesh(new THREE.BoxGeometry(1.8,1.0,0.4),new THREE.MeshLambertMaterial({color:0x29B6F6,transparent:true,opacity:0.5}));
+  water2.position.set(11,0.6,-13); scene.add(water2);
+  box(0.7,0.9,0.5,0x555555,11,0,-10);
+  box(0.6,0.5,0.1,0x333333,11,1.0,-9.75);
+}
+addDecor();
+
+// ═══════════════════════════════════════════════════════════
+//  PLAYER CHARACTER  ← ИСПРАВЛЕНО: Y-позиции частей тела подняты
+// ═══════════════════════════════════════════════════════════
+const playerGroup=new THREE.Group();
+scene.add(playerGroup);
+// FIX 1: Поднимаем группу чуть выше, чтобы ноги не проваливались в пол
+playerGroup.position.set(SPAWN.x, 0.05, SPAWN.z);
+
+function darken(hex,amt){
+  const r=Math.max(0,((hex>>16)&0xff)-amt);
+  const g=Math.max(0,((hex>>8)&0xff)-amt);
+  const b=Math.max(0,(hex&0xff)-amt);
+  return(r<<16)|(g<<8)|b;
+}
+function lighten(hex,amt){
+  const r=Math.min(255,((hex>>16)&0xff)+amt);
+  const g=Math.min(255,((hex>>8)&0xff)+amt);
+  const b=Math.min(255,(hex&0xff)+amt);
+  return(r<<16)|(g<<8)|b;
+}
+
+function buildPlayer(hexColor, skinId){
+  while(playerGroup.children.length) playerGroup.remove(playerGroup.children[0]);
+
+  const isPanda = skinId==='panda' || G.playerName.toLowerCase()==='панда';
+  const isRedBlack = skinId==='redblack';
+
+  // FIX 2: Все Y-позиции частей тела подняты на +0.45
+  // чтобы ноги начинались от 0 (пола) а не уходили под пол
+  const OFFSET = 0.45; // подъём всего тела вверх
+
+  function bp(w,h,d,col,x,y,z){
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:col}));
+    m.position.set(x, y + OFFSET, z);
+    m.castShadow=true; playerGroup.add(m); return m;
+  }
+
+  if(isPanda){
+    bp(0.9,1.15,0.55,0xF0F0F0, 0,1.07,0);
+    bp(0.3,0.5,0.6,0x111111, -0.5,1.1,0);
+    bp(0.3,0.5,0.6,0x111111,  0.5,1.1,0);
+    bp(0.55,0.65,0.12,0xE8E8E8, 0,1.0,0.28);
+    bp(0.85,0.85,0.85,0xF5F5F5, 0,1.92,0);
+    bp(0.35,0.32,0.12,0x111111,-0.22,2.02,0.42);
+    bp(0.35,0.32,0.12,0x111111, 0.22,2.02,0.42);
+    bp(0.2,0.2,0.07,0xFFFFFF,-0.22,2.03,0.46);
+    bp(0.2,0.2,0.07,0xFFFFFF, 0.22,2.03,0.46);
+    bp(0.1,0.12,0.06,0x111111,-0.20,2.03,0.50);
+    bp(0.1,0.12,0.06,0x111111, 0.20,2.03,0.50);
+    bp(0.05,0.05,0.04,0xFFFFFF,-0.16,2.07,0.53);
+    bp(0.05,0.05,0.04,0xFFFFFF, 0.24,2.07,0.53);
+    bp(0.18,0.13,0.07,0x111111, 0,1.92,0.44);
+    bp(0.05,0.05,0.04,0x333333,-0.07,1.90,0.48);
+    bp(0.05,0.05,0.04,0x333333, 0.07,1.90,0.48);
+    bp(0.1,0.08,0.05,0x222222,-0.12,1.79,0.44);
+    bp(0.1,0.08,0.05,0x222222, 0.12,1.79,0.44);
+    bp(0.08,0.1,0.05,0x222222, 0.0, 1.83,0.44);
+    const earMat=new THREE.MeshLambertMaterial({color:0x111111});
+    [-0.38,0.38].forEach(ex=>{
+      const earOut=new THREE.Mesh(new THREE.SphereGeometry(0.23,12,10),earMat);
+      earOut.scale.z=0.6; earOut.position.set(ex,2.42+OFFSET,0); playerGroup.add(earOut);
+      const earIn=new THREE.Mesh(new THREE.SphereGeometry(0.12,10,8),new THREE.MeshLambertMaterial({color:0x333333}));
+      earIn.scale.z=0.6; earIn.position.set(ex,2.42+OFFSET,0.08); playerGroup.add(earIn);
+    });
+    // FIX 3: Ноги — начинаются с y=0 (пол), высота 0.85
+    [-0.24,0.24].forEach((lx,i)=>{
+      const lg=bp(0.36,0.85,0.36,0x111111, lx,0.0,0);
+      lg.name='leg'+i;
+    });
+    // FIX 4: Руки — подняты на высоту торса
+    [-0.72,0.72].forEach((ax,i)=>{
+      const arm=bp(0.28,0.9,0.28,0x111111, ax,0.6,0);
+      arm.name='arm'+i;
+    });
+    bp(0.88,0.9,0.13,0xFFFDE7, 0,1.0,0.29);
+    bp(0.72,0.12,0.72,0x111111, 0,2.48,0);
+    bp(0.5,0.38,0.5,0x111111, 0,2.67,0);
+    bp(0.54,0.06,0.54,0xFFFFFF, 0,2.48,0);
+
+  } else if(isRedBlack){
+    bp(0.9,1.15,0.55,0xCC0000, 0,1.07,0);
+    bp(0.5,0.55,0.6,0x111111,-0.42,1.15,0);
+    bp(0.5,0.55,0.6,0x111111, 0.42,1.15,0);
+    bp(0.92,0.15,0.58,0x111111, 0,0.72,0);
+    bp(0.2,0.2,0.1,0xFFD700, 0,0.72,0.31);
+    bp(0.82,0.82,0.82,0x111111, 0,1.92,0);
+    bp(0.65,0.22,0.1,0xFF2200, 0,1.95,0.42);
+    bp(0.65,0.22,0.1,0xFF6600, 0,1.95,0.44);
+    bp(0.2,0.07,0.06,0xFF2200,-0.2,2.1,0.42);
+    bp(0.2,0.07,0.06,0xFF2200, 0.2,2.1,0.42);
+    bp(0.1,0.08,0.06,0x880000, 0,1.86,0.43);
+    bp(0.26,0.07,0.06,0xFF2200, 0.05,1.75,0.43);
+    for(let s=-1;s<=1;s++) bp(0.12,0.28,0.12,0xFF2200, s*0.22,2.42,0);
+    [-0.24,0.24].forEach((lx,i)=>{
+      const lg=bp(0.36,0.85,0.36,0x111111, lx,0.0,0);
+      lg.name='leg'+i;
+    });
+    [-0.72,0.72].forEach((ax,i)=>{
+      const arm=bp(0.28,0.9,0.28,0xCC0000, ax,0.6,0);
+      arm.name='arm'+i;
+    });
+    bp(0.88,0.9,0.13,0x1a1a1a, 0,1.0,0.29);
+    bp(0.1,0.9,0.14,0xFF2200, 0,1.0,0.3);
+
+  } else {
+    // ── ОБЫЧНЫЙ СКИН ──
+    const c=parseInt(hexColor.replace('#',''),16);
+    const dk=darken(c,50);
+    const lt=lighten(c,40);
+    bp(0.88,1.12,0.54,c, 0,1.07,0);
+    bp(0.5,0.6,0.1,lt, 0,1.15,0.28);
+    bp(0.8,0.8,0.8,0xFFCBA4, 0,1.9,0);
+    bp(0.18,0.12,0.06,0xFFAA99,-0.3,1.8,0.38);
+    bp(0.18,0.12,0.06,0xFFAA99, 0.3,1.8,0.38);
+    bp(0.14,0.18,0.06,0x222222,-0.2,1.95,0.41);
+    bp(0.14,0.18,0.06,0x222222, 0.2,1.95,0.41);
+    bp(0.06,0.07,0.04,0xFFFFFF,-0.16,1.98,0.44);
+    bp(0.06,0.07,0.04,0xFFFFFF, 0.24,1.98,0.44);
+    bp(0.28,0.07,0.06,0x883300, 0,1.78,0.41);
+    bp(0.1,0.13,0.06,0x883300,-0.14,1.80,0.41);
+    bp(0.1,0.13,0.06,0x883300, 0.14,1.80,0.41);
+    bp(0.1,0.08,0.05,0xFF9988, 0,1.88,0.41);
+    bp(0.82,0.18,0.82,0x3B1F00, 0,2.33,0);
+    bp(0.2,0.25,0.2,0x3B1F00,-0.3,2.28,0);
+    bp(0.2,0.25,0.2,0x3B1F00, 0.3,2.28,0);
+    // FIX 3: Ноги начинаются с y=0, не уходят под пол
+    [-0.24,0.24].forEach((lx,i)=>{
+      const lg=bp(0.35,0.85,0.35,dk, lx,0.0,0);
+      lg.name='leg'+i;
+    });
+    // FIX 4: Руки на уровне торса
+    [-0.7,0.7].forEach((ax,i)=>{
+      const arm=bp(0.27,0.88,0.27,c, ax,0.6,0);
+      arm.name='arm'+i;
+    });
+    bp(0.88,0.9,0.13,0xFFFDE7, 0,1.0,0.29);
+    bp(0.28,0.22,0.1,0xFFE0B0, 0,0.78,0.31);
+    bp(0.72,0.12,0.72,0xFFFFFF, 0,2.48,0);
+    bp(0.5,0.38,0.5,0xFFFFFF, 0,2.67,0);
+    bp(0.54,0.06,0.54,0x4ECDC4, 0,2.48,0);
+  }
+}
+
+const heldMesh=new THREE.Mesh(new THREE.BoxGeometry(0.35,0.35,0.35),new THREE.MeshLambertMaterial({color:0xFFFFFF}));
+heldMesh.visible=false; playerGroup.add(heldMesh);
+heldMesh.position.set(0.55,2.1,0.1); // FIX: поднять предмет в руке выше
+
+// ═══════════════════════════════════════════════════════════
+//  NPC SYSTEM
+// ═══════════════════════════════════════════════════════════
+function createNPC(tableZone){
+  const name=NPC_NAMES[Math.floor(Math.random()*NPC_NAMES.length)];
+  const emo=NPC_EMO[Math.floor(Math.random()*NPC_EMO.length)];
+  const food=FOOD_ITEMS[Math.floor(Math.random()*FOOD_ITEMS.length)];
+  const colHex=PCOLORS[Math.floor(Math.random()*PCOLORS.length)];
+  const c=parseInt(colHex.replace('#',''),16);
+  const dk=darken(c,50);
+  const g=new THREE.Group();
+
+  function np(w,h,d,col,x,y,z){
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:col}));
+    m.position.set(x,y,z); m.castShadow=true; g.add(m); return m;
+  }
+
+  np(0.72,1.0,0.44,c, 0,1.15,0.0);
+  np(0.72,0.72,0.72,0xFFCBA4, 0,1.97,0.0);
+  np(0.15,0.19,0.06,0x111111,-0.18,2.03,0.37);
+  np(0.15,0.19,0.06,0x111111, 0.18,2.03,0.37);
+  np(0.06,0.07,0.04,0xFFFFFF,-0.13,2.07,0.40);
+  np(0.06,0.07,0.04,0xFFFFFF, 0.22,2.07,0.40);
+  np(0.1,0.08,0.06,0xE07060, 0,1.94,0.37);
+  np(0.26,0.07,0.05,0x882200, 0,   1.82,0.37);
+  np(0.08,0.12,0.05,0x882200,-0.13,1.84,0.37);
+  np(0.08,0.12,0.05,0x882200, 0.13,1.84,0.37);
+  np(0.14,0.09,0.05,0xFFAA99,-0.28,1.91,0.37);
+  np(0.14,0.09,0.05,0xFFAA99, 0.28,1.91,0.37);
+  np(0.74,0.16,0.74,0x3B1F00, 0,2.35,0);
+  np(0.24,0.82,0.24,c,-0.60,1.1,0.0);
+  np(0.24,0.82,0.24,c, 0.60,1.1,0.0);
+  [-0.2,0.2].forEach(lx=>{
+    const th=new THREE.Mesh(new THREE.BoxGeometry(0.27,0.62,0.27),new THREE.MeshLambertMaterial({color:dk}));
+    th.rotation.x=Math.PI/2; th.position.set(lx,0.57,0.22); th.castShadow=true; g.add(th);
+    const sh=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.52,0.24),new THREE.MeshLambertMaterial({color:dk}));
+    sh.position.set(lx,0.25,0.52); sh.castShadow=true; g.add(sh);
+  });
+  np(0.74,0.85,0.12,0xFFFDE7,0,1.1,0.23);
+
+  const bubbleGeo=new THREE.PlaneGeometry(1.4,0.5);
+  const bubbleMat=new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:0.92,side:THREE.DoubleSide});
+  const bubble=new THREE.Mesh(bubbleGeo,bubbleMat);
+  bubble.position.set(0,2.72,0);
+  g.add(bubble);
+
+  const angle=Math.atan2(tableZone.pos.x,tableZone.pos.z)+Math.PI;
+  g.position.set(tableZone.pos.x,0,tableZone.pos.z);
+  g.rotation.y=angle;
+  g.castShadow=true; scene.add(g);
+
+  const npcObj={
+    mesh:g, name, emo, food, colHex,
+    table:tableZone, patience:100,
+    state:'waiting',
+    bobT:0,
+    bubbleMesh:bubble,
+  };
+  tableZone.occupied=true; tableZone.npc=npcObj;
+  G.npcs.push(npcObj);
+  addOrderCard(npcObj);
+  return npcObj;
+}
+
+function removeNPC(npc){
+  scene.remove(npc.mesh);
+  npc.table.occupied=false; npc.table.npc=null;
+  G.npcs=G.npcs.filter(n=>n!==npc);
+  G.orders=G.orders.filter(o=>o.npc!==npc);
+  renderOrders();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ORDER CARDS  ← ИСПРАВЛЕНО: заказы принимаются кликом
+// ═══════════════════════════════════════════════════════════
+function addOrderCard(npc){
+  G.orders.push({npc, accepted:false});
+  renderOrders();
+}
+
+function renderOrders(){
+  const el=document.getElementById('ordersList');
+  el.innerHTML='';
+  G.orders.forEach(ord=>{
+    const d=document.createElement('div');
+    d.className='order-card'+(ord.accepted?' accepted':'');
+    const pct=ord.npc.patience;
+    const patColor=pct>60?'#95E77E':pct>30?'#FFD93D':'#FF4757';
+    // FIX 5: Подсказка что нужно нажать для принятия
+    const hintText = ord.accepted
+      ? '✅ Принято — подай блюдо!'
+      : '👆 Нажми чтобы принять';
+    d.innerHTML=`
+      <span class="order-emo">${ord.npc.emo}</span>
+      <div class="order-info">
+        <div class="o-name">${ord.npc.name}</div>
+        <div class="o-dish">${ord.npc.food.ico} ${ord.npc.food.name}</div>
+        <div class="o-pts">+${ord.npc.food.pts} очков</div>
+        <div class="order-patience"><div class="order-pat-fill" style="width:${pct}%;background:${patColor}"></div></div>
+        <div class="order-hint">${hintText}</div>
+      </div>`;
+    // FIX 6: Слушатель клика — принять заказ (только если не принят)
+    d.addEventListener('click', ()=>{
+      if(!ord.accepted) acceptOrder(ord);
+    });
+    d.addEventListener('touchend', (e)=>{
+      e.stopPropagation();
+      if(!ord.accepted) acceptOrder(ord);
+    });
+    el.appendChild(d);
+  });
+}
+
+function acceptOrder(ord){
+  ord.accepted=true;
+  ord.npc.state='accepted';
+  notify(`✅ Принял заказ: ${ord.npc.food.ico} для ${ord.npc.name}`,'g');
+  renderOrders();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INVENTORY / BAG
+// ═══════════════════════════════════════════════════════════
+function addToBag(foodId){
+  const food=FOOD_ITEMS.find(f=>f.id===foodId);
+  if(!food) return;
+  let slot=G.bag.find(s=>s.id===foodId);
+  if(!slot){ G.bag.push({id:foodId,name:food.name,ico:food.ico,qty:1}); }
+  else slot.qty++;
+  document.getElementById('bagBadge').textContent=G.bag.reduce((s,b)=>s+b.qty,0);
+  renderBag();
+}
+
+function removeFromBag(foodId){
+  let slot=G.bag.find(s=>s.id===foodId);
+  if(!slot||slot.qty<=0) return false;
+  slot.qty--;
+  if(slot.qty<=0) G.bag=G.bag.filter(s=>s.id!==foodId);
+  document.getElementById('bagBadge').textContent=G.bag.reduce((s,b)=>s+b.qty,0);
+  renderBag();
+  return true;
+}
+
+function renderBag(){
+  const el=document.getElementById('invSlots');
+  el.innerHTML='';
+  if(G.bag.length===0){
+    el.innerHTML='<div style="color:rgba(255,220,150,0.5);text-align:center;padding:30px;font-size:14px">Сумка пуста</div>';
+    return;
+  }
+  G.bag.forEach(slot=>{
+    const d=document.createElement('div');
+    d.className='inv-slot'+(G.heldItem===slot.id?' selected':'');
+    d.innerHTML=`
+      <span class="slot-ico">${slot.ico}</span>
+      <div class="slot-info">
+        <div class="slot-name">${slot.name}</div>
+        <div class="slot-qty">Количество: ${slot.qty}</div>
+      </div>
+      <span class="slot-action">Взять →</span>`;
+    d.addEventListener('click',()=>{
+      G.heldItem=slot.id;
+      updateHeldDisplay();
+      document.getElementById('inventory').classList.remove('open');
+      notify(`Держишь: ${slot.ico} ${slot.name}`,'y');
+    });
+    el.appendChild(d);
+  });
+}
+
+function updateHeldDisplay(){
+  const pill=document.getElementById('heldPill');
+  if(G.heldItem){
+    const f=FOOD_ITEMS.find(x=>x.id===G.heldItem);
+    pill.style.display='flex';
+    document.getElementById('heldIco').textContent=f?f.ico:'?';
+    document.getElementById('heldName').textContent=f?f.name:'—';
+    heldMesh.visible=true;
+    heldMesh.material.color.setHex(f?f.col:0xFFFFFF);
+  } else {
+    pill.style.display='none';
+    heldMesh.visible=false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STORE
+// ═══════════════════════════════════════════════════════════
+function renderStore(){
+  const el=document.getElementById('storeItems');
+  el.innerHTML='';
+  STORE_ITEMS.forEach(item=>{
+    const bought=G.bought.includes(item.id);
+    const d=document.createElement('div');
+    d.className='store-item'+(bought?' bought':'');
+    d.innerHTML=`
+      <div class="si-ico">${item.ico}</div>
+      <div class="si-name">${item.name}</div>
+      <div class="si-desc">${item.desc}</div>
+      <div class="si-price ${bought?'free':''}">${bought?'✅ Куплено':'🪙 '+item.price}</div>`;
+    if(!bought) d.addEventListener('click',()=>buyItem(item));
+    el.appendChild(d);
+  });
+}
+
+function buyItem(item){
+  if(G.coins<item.price){ notify('Не хватает монет! 🪙','r'); return; }
+  G.coins-=item.price;
+  G.bought.push(item.id);
+  if(item.type==='table'){
+    const idx=parseInt(item.id.replace('table',''))-1;
+    if(TABLE_POSITIONS[idx] && !tableObjs[idx-1]) buildTable(TABLE_POSITIONS[idx],idx);
+  }
+  notify(`✅ Куплено: ${item.ico} ${item.name}`,'g');
+  coinPop(-item.price);
+  updateHUD(); renderStore(); saveGame();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INTERACTION ZONE DETECTION
+// ═══════════════════════════════════════════════════════════
+function checkInteractables(){
+  const pp=playerGroup.position;
+  let nearest=null, nearDist=2.8;
+
+  G.counterZones.forEach(cz=>{
+    const d=pp.distanceTo(cz.pos);
+    if(d<nearDist){ nearDist=d; nearest={type:'counter',data:cz}; }
+  });
+  G.tableZones.forEach(tz=>{
+    if(tz.occupied && tz.npc && tz.npc.state==='accepted'){
+      const d=pp.distanceTo(tz.pos);
+      if(d<3.2){ nearest={type:'table',data:tz}; }
+    }
+  });
+
+  G.nearInteractable=nearest;
+
+  const btn=document.getElementById('actionBtn');
+  const emo=document.getElementById('actionEmoji');
+  const lbl=document.getElementById('actionLabel');
+  if(nearest){
+    btn.style.display='flex';
+    if(nearest.type==='counter'){
+      emo.textContent=nearest.data.ico;
+      lbl.textContent='ВЗЯТЬ';
+    } else if(nearest.type==='table'){
+      emo.textContent='🍽️';
+      lbl.textContent='ПОДАТЬ';
+    }
+  } else {
+    btn.style.display='none';
+  }
+}
+
+function doAction(){
+  if(!G.nearInteractable) return;
+  const ni=G.nearInteractable;
+  if(ni.type==='counter'){
+    addToBag(ni.data.foodId);
+    G.heldItem=ni.data.foodId;
+    updateHeldDisplay();
+    notify(`${ni.data.ico} взял ${FOOD_ITEMS.find(f=>f.id===ni.data.foodId).name}!`,'y');
+  } else if(ni.type==='table'){
+    const tz=ni.data;
+    const npc=tz.npc;
+    const accepted=G.orders.find(o=>o.npc===npc&&o.accepted);
+    if(!accepted){ notify('Сначала прими заказ! 📋 (нажми на карточку)','r'); return; }
+    if(!G.heldItem){ notify('Возьми еду сначала! 🍽️','r'); return; }
+    if(G.heldItem!==npc.food.id){
+      notify(`Нужно: ${npc.food.ico} ${npc.food.name}!`,'r'); return;
+    }
+    const removed=removeFromBag(G.heldItem);
+    if(!removed){ notify('Нет такой еды в сумке!','r'); return; }
+    const earned=npc.food.pts;
+    G.coins+=Math.ceil(earned*0.5);
+    G.score+=earned;
+    G.level=Math.floor(G.score/200)+1;
+    coinPop(earned);
+    notify(`🎉 ${npc.name} доволен! +${earned} очков +🪙${Math.ceil(earned*0.5)}`,'g');
+    G.heldItem=null;
+    updateHeldDisplay();
+    npc.state='leaving';
+    setTimeout(()=>removeNPC(npc),2000);
+    G.orders=G.orders.filter(o=>o.npc!==npc);
+    renderOrders();
+    updateHUD();
+    saveGame();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HUD UPDATE
+// ═══════════════════════════════════════════════════════════
+function updateHUD(){
+  document.getElementById('hCoins').textContent=G.coins;
+  document.getElementById('hScore').textContent=G.score;
+  document.getElementById('hLevel').textContent=G.level;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NOTIFICATIONS / FX
+// ═══════════════════════════════════════════════════════════
+function notify(msg,type=''){
+  const box=document.getElementById('notifBox');
+  const d=document.createElement('div');
+  d.className='notif '+type; d.textContent=msg;
+  box.appendChild(d);
+  setTimeout(()=>d.remove(),2600);
+}
+function coinPop(amt){
+  const d=document.createElement('div');
+  d.className='cpop';
+  d.textContent=(amt>0?'+':'')+amt+(amt>0?'🪙':'');
+  d.style.left=(30+Math.random()*40)+'%';
+  d.style.top='40%';
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),1300);
+}
+function spawnFlash(){
+  const f=document.getElementById('flash');
+  f.style.opacity='1'; setTimeout(()=>f.style.opacity='0',300);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NAMETAGS
+// ═══════════════════════════════════════════════════════════
+const ntCanvas=document.getElementById('nametagCanvas');
+ntCanvas.width=innerWidth; ntCanvas.height=innerHeight;
+const ntCtx=ntCanvas.getContext('2d');
+
+function drawNametags(){
+  ntCtx.clearRect(0,0,ntCanvas.width,ntCanvas.height);
+  if(!G.started) return;
+  const allChars=[
+    {mesh:playerGroup, name:G.playerName, color:G.playerColor, off:2.8},
+    ...G.npcs.map(n=>({mesh:n.mesh, name:n.name+' '+n.food.ico, color:n.colHex, off:2.4}))
+  ];
+  allChars.forEach(({mesh,name,color,off})=>{
+    const pos=mesh.position.clone(); pos.y+=off;
+    const p=pos.project(camera);
+    if(p.z>1) return;
+    const sx=(p.x+1)/2*ntCanvas.width;
+    const sy=(-p.y+1)/2*ntCanvas.height;
+    const dist=camera.position.distanceTo(mesh.position);
+    if(dist>25) return;
+    const alpha=Math.max(0,1-dist/25);
+    const fs=Math.max(11,Math.min(16,180/dist));
+    ntCtx.font=`bold ${fs}px 'Segoe UI', sans-serif`;
+    ntCtx.textAlign='center';
+    const tw=ntCtx.measureText(name).width;
+    ntCtx.globalAlpha=alpha*0.8;
+    ntCtx.fillStyle='rgba(0,0,0,0.65)';
+    ntCtx.beginPath();
+    if(ntCtx.roundRect) ntCtx.roundRect(sx-tw/2-5,sy-fs-3,tw+10,fs+6,5);
+    else ntCtx.rect(sx-tw/2-5,sy-fs-3,tw+10,fs+6);
+    ntCtx.fill();
+    ntCtx.globalAlpha=alpha;
+    ntCtx.fillStyle=color;
+    ntCtx.fillText(name,sx,sy);
+    ntCtx.globalAlpha=1;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MINIMAP
+// ═══════════════════════════════════════════════════════════
+const mmCanvas=document.getElementById('minimapCanvas');
+const mmCtx=mmCanvas.getContext('2d');
+function drawMinimap(){
+  mmCtx.clearRect(0,0,90,90);
+  mmCtx.fillStyle='rgba(10,4,0,0.85)'; mmCtx.fillRect(0,0,90,90);
+  const sc=90/40; const cx=45,cy=45;
+  const wx=x=>cx+x*sc, wz=z=>cy+z*sc;
+  mmCtx.strokeStyle='rgba(255,180,50,0.4)'; mmCtx.lineWidth=1.5;
+  mmCtx.strokeRect(wx(-14),wz(-14),28*sc,28*sc);
+  G.tableZones.forEach(tz=>{
+    mmCtx.fillStyle=tz.occupied?'#FF6B35':'#8B4513';
+    mmCtx.fillRect(wx(tz.pos.x-1),wz(tz.pos.z-0.7),2*sc,1.4*sc);
+  });
+  G.npcs.forEach(n=>{
+    mmCtx.fillStyle=n.colHex||'#4ECDC4';
+    mmCtx.beginPath(); mmCtx.arc(wx(n.mesh.position.x),wz(n.mesh.position.z),3,0,Math.PI*2); mmCtx.fill();
+  });
+  mmCtx.fillStyle=G.playerColor||'#FFD93D';
+  mmCtx.beginPath(); mmCtx.arc(wx(playerGroup.position.x),wz(playerGroup.position.z),4,0,Math.PI*2); mmCtx.fill();
+  mmCtx.strokeStyle='white'; mmCtx.lineWidth=1.5; mmCtx.stroke();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INPUT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('keydown',e=>{ G.keys[e.code]=true; });
+window.addEventListener('keyup',e=>{ G.keys[e.code]=false; });
+window.addEventListener('keydown',e=>{ if(e.code==='KeyE') doAction(); });
+
+document.getElementById('gameCanvas').addEventListener('click',()=>{
+  if(G.started) document.getElementById('gameCanvas').requestPointerLock();
+});
+document.addEventListener('pointerlockchange',()=>{
+  G.pointerLocked=document.pointerLockElement===document.getElementById('gameCanvas');
+});
+document.addEventListener('mousemove',e=>{
+  if(!G.pointerLocked) return;
+  G.yaw-=e.movementX*0.002;
+  G.pitch=Math.max(-0.4,Math.min(0.9,G.pitch-e.movementY*0.002));
+});
+
+document.getElementById('actionBtn').addEventListener('click',doAction);
+document.getElementById('actionBtn').addEventListener('touchend',e=>{e.preventDefault();doAction();});
+
+document.getElementById('bagBtn').addEventListener('click',()=>{
+  const inv=document.getElementById('inventory');
+  renderBag(); inv.classList.toggle('open');
+});
+document.getElementById('invClose').addEventListener('click',()=>{
+  document.getElementById('inventory').classList.remove('open');
+});
+
+document.getElementById('storeBtn').addEventListener('click',()=>{
+  renderStore(); document.getElementById('storePanel').classList.add('open');
+});
+document.getElementById('storeClose').addEventListener('click',()=>{
+  document.getElementById('storePanel').classList.remove('open');
+});
+document.getElementById('storePanel').addEventListener('click',e=>{
+  if(e.target===document.getElementById('storePanel'))
+    document.getElementById('storePanel').classList.remove('open');
+});
+
+const jArea=document.getElementById('joystickArea');
+const jKnob=document.getElementById('joystickKnob');
+let jTouchId=null;
+jArea.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.changedTouches[0];
+  jTouchId=t.identifier;
+  const r=jArea.getBoundingClientRect();
+  G.joystick.startX=r.left+r.width/2;
+  G.joystick.startY=r.top+r.height/2;
+  G.joystick.active=true;
+},{passive:false});
+window.addEventListener('touchmove',e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier!==jTouchId) continue;
+    const dx=t.clientX-G.joystick.startX;
+    const dy=t.clientY-G.joystick.startY;
+    const mag=Math.min(45,Math.sqrt(dx*dx+dy*dy));
+    const angle=Math.atan2(dy,dx);
+    G.joystick.x=Math.cos(angle)*(mag/45);
+    G.joystick.y=Math.sin(angle)*(mag/45);
+    jKnob.style.transform=`translate(calc(-50% + ${Math.cos(angle)*mag}px), calc(-50% + ${Math.sin(angle)*mag}px))`;
+  }
+},{passive:true});
+window.addEventListener('touchend',e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===jTouchId){
+      G.joystick.active=false; G.joystick.x=0; G.joystick.y=0;
+      jKnob.style.transform='translate(-50%,-50%)';
+    }
+  }
+});
+
+let camTouch=null, camTouchPrev=null;
+window.addEventListener('touchstart',e=>{
+  for(const t of e.changedTouches){
+    if(t.clientX>innerWidth/2 && !camTouch){ camTouch=t.identifier; camTouchPrev={x:t.clientX,y:t.clientY}; }
+  }
+},{passive:true});
+window.addEventListener('touchmove',e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===camTouch && camTouchPrev){
+      G.yaw-=(t.clientX-camTouchPrev.x)*0.003;
+      G.pitch=Math.max(-0.4,Math.min(0.9,G.pitch-(t.clientY-camTouchPrev.y)*0.003));
+      camTouchPrev={x:t.clientX,y:t.clientY};
+    }
+  }
+},{passive:true});
+window.addEventListener('touchend',e=>{
+  for(const t of e.changedTouches){ if(t.identifier===camTouch){camTouch=null;camTouchPrev=null;} }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  NAME SCREEN
+// ═══════════════════════════════════════════════════════════
+PCOLORS.forEach((c,i)=>{
+  const d=document.createElement('div');
+  d.className='copt'+(i===0?' sel':'');
+  d.style.background=c;
+  d.addEventListener('click',()=>{
+    document.querySelectorAll('.copt').forEach(x=>x.classList.remove('sel'));
+    d.classList.add('sel'); G.selectedColorIdx=i; G.playerColor=PCOLORS[i];
+  });
+  document.getElementById('colorPicker').appendChild(d);
+});
+
+document.querySelectorAll('.skin-opt').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('.skin-opt').forEach(x=>x.classList.remove('sel'));
+    el.classList.add('sel');
+    G.selectedSkin=el.dataset.skin;
+    const colorLabel=document.getElementById('colorLabel');
+    const colorRow=document.getElementById('colorPicker');
+    if(G.selectedSkin==='normal'){
+      colorLabel.style.display='block'; colorRow.style.display='flex';
+    } else {
+      colorLabel.style.display='none'; colorRow.style.display='none';
+    }
+  });
+});
+
+async function startGame(){
+  const v=document.getElementById('nameInput').value.trim();
+  G.playerName=v||'Игрок';
+  if(G.playerName.toLowerCase()==='панда') G.selectedSkin='panda';
+  G.playerColor=PCOLORS[G.selectedColorIdx];
+  buildPlayer(G.playerColor, G.selectedSkin);
+  await loadGame(); updateHUD();
+  document.getElementById('nameScreen').style.display='none';
+  document.getElementById('hudTop').style.display='flex';
+  document.getElementById('bagBtn').style.display='flex';
+  document.getElementById('inventory').style.display='flex';
+  document.getElementById('ordersPanel').style.display='block';
+  document.getElementById('storeBtn').style.display='flex';
+  document.getElementById('joystickArea').style.display='block';
+  document.getElementById('minimap').style.display='block';
+  document.getElementById('actionBtn').style.display='none';
+  G.started=true;
+  spawnFlash();
+  notify('☕ Добро пожаловать! Нажимай на заказы чтобы принять их!','g');
+  setTimeout(()=>spawnNPCWave(),1500);
+  setInterval(()=>spawnNPCWave(),15000);
+  setInterval(updatePatience,1000);
+  setInterval(()=>{ if(G.started) saveGame(); },30000);
+}
+
+document.getElementById('joinBtn').addEventListener('click',startGame);
+document.getElementById('nameInput').addEventListener('keydown',e=>{ if(e.code==='Enter') startGame(); });
+
+// ═══════════════════════════════════════════════════════════
+//  NPC SPAWNING
+// ═══════════════════════════════════════════════════════════
+function spawnNPCWave(){
+  const free=G.tableZones.filter(t=>!t.occupied);
+  const count=Math.min(free.length, 1+Math.floor(Math.random()*2));
+  for(let i=0;i<count;i++){
+    if(free[i]) createNPC(free[i]);
+  }
+}
+
+function updatePatience(){
+  G.orders.forEach(ord=>{
+    if(ord.npc.state==='leaving') return;
+    ord.npc.patience=Math.max(0,ord.npc.patience-2);
+    if(ord.npc.patience<=0){
+      notify(`😤 ${ord.npc.name} ушёл — не дождался!`,'r');
+      removeNPC(ord.npc);
+    }
+  });
+  renderOrders();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PHYSICS
+// ═══════════════════════════════════════════════════════════
+function getFloorY(){ return 0.05; } // FIX: пол чуть выше 0
+
+// ═══════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════════════════
+const GRAVITY=-20, JUMP=9, PSPEED=6;
+
+function animate(now){
+  requestAnimationFrame(animate);
+  const dt=Math.min((now-G.lastTime)/1000,0.05);
+  G.lastTime=now;
+
+  G.frameCount++; G.fpsTimer+=dt;
+  if(G.fpsTimer>.5){ G.fps=Math.round(G.frameCount/G.fpsTimer); G.frameCount=0; G.fpsTimer=0; }
+
+  G.npcs.forEach(npc=>{
+    npc.bobT+=dt*2;
+    if(npc.state!=='leaving'){
+      npc.mesh.rotation.y+=dt*0.5;
+      npc.mesh.position.y=Math.sin(npc.bobT)*0.04;
+    } else {
+      npc.mesh.position.z+=dt*2;
+    }
+    if(npc.bubbleMesh) npc.bubbleMesh.lookAt(camera.position);
+  });
+
+  if(!G.started){ renderer.render(scene,camera); return; }
+
+  const spd=G.keys['ShiftLeft']||G.keys['ShiftRight']?PSPEED*1.7:PSPEED;
+  let mx=0,mz=0;
+  if(G.keys['KeyW']||G.keys['ArrowUp'])    mz-=1;
+  if(G.keys['KeyS']||G.keys['ArrowDown'])  mz+=1;
+  if(G.keys['KeyA']||G.keys['ArrowLeft'])  mx-=1;
+  if(G.keys['KeyD']||G.keys['ArrowRight']) mx+=1;
+  if(G.joystick.active){ mx+=G.joystick.x; mz+=G.joystick.y; }
+
+  const mlen=Math.sqrt(mx*mx+mz*mz);
+  if(mlen>0){ mx/=mlen; mz/=mlen; }
+  const cosY=Math.cos(G.yaw), sinY=Math.sin(G.yaw);
+  const wx=mx*cosY+mz*sinY, wz=-mx*sinY+mz*cosY;
+
+  let nx=Math.max(-13,Math.min(13,playerGroup.position.x+wx*spd*dt));
+  let nz=Math.max(-13,Math.min(13,playerGroup.position.z+wz*spd*dt));
+  playerGroup.position.x=nx; playerGroup.position.z=nz;
+
+  G.velY+=GRAVITY*dt;
+  if((G.keys['Space'])&&G.onGround){ G.velY=JUMP; G.onGround=false; }
+  playerGroup.position.y+=G.velY*dt;
+  const fy=getFloorY();
+  if(playerGroup.position.y<=fy){ playerGroup.position.y=fy; G.velY=0; G.onGround=true; }
+
+  if(mlen>0) playerGroup.rotation.y=Math.atan2(wx,wz);
+
+  // walk animation
+  if(mlen>0){
+    const t=now*0.007;
+    ['leg0','leg1','arm0','arm1'].forEach((nm,i)=>{
+      const c=playerGroup.children.find(x=>x.name===nm);
+      if(c) c.position.y = (i<2 ? 0.45 : 0.6+0.45) + Math.sin(t+(i%2===0?0:Math.PI))*0.15;
+    });
+  }
+
+  if(playerGroup.position.y<-5){ playerGroup.position.set(SPAWN.x,0.05,SPAWN.z); G.velY=0; spawnFlash(); }
+
+  const camD=6, camH=2.5+G.pitch*3;
+  const tx=playerGroup.position.x+Math.sin(G.yaw)*camD;
+  const tz=playerGroup.position.z+Math.cos(G.yaw)*camD;
+  const ty=playerGroup.position.y+camH;
+  camera.position.lerp(new THREE.Vector3(tx,ty,tz),0.12);
+  camera.lookAt(playerGroup.position.x,playerGroup.position.y+1.5,playerGroup.position.z);
+
+  checkInteractables();
+
+  renderer.render(scene,camera);
+  drawNametags();
+  drawMinimap();
+}
+
+window.addEventListener('resize',()=>{
+  renderer.setSize(innerWidth,innerHeight);
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  ntCanvas.width=innerWidth; ntCanvas.height=innerHeight;
+});
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
