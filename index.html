@@ -2,1316 +2,520 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>🍰 Кафе Мечты 3D — Мультиплеер</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panda Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{background:#0d0500;overflow:hidden;font-family:'Segoe UI',sans-serif;touch-action:none;}
-canvas{display:block;}
-#gameCanvas{position:fixed;top:0;left:0;}
-#nametagCanvas{position:fixed;top:0;left:0;pointer-events:none;z-index:5;}
+:root {
+  --bg: #0e0e16;
+  --surface: #16161f;
+  --surface2: #1e1e2a;
+  --border: #2c2c3e;
+  --accent: #6c63ff;
+  --accent2: #ff6584;
+  --green: #43e97b;
+  --text: #eaeaf5;
+  --muted: #6b6b8f;
+  --online: #43e97b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Nunito',sans-serif; height:100dvh; display:flex; overflow:hidden; }
 
-/* ══ LOBBY SCREEN ══ */
-#lobbyScreen{
-  position:fixed;inset:0;z-index:100;
-  background:linear-gradient(135deg,#0d0500 0%,#2a0e00 50%,#1a0800 100%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;padding:20px;overflow-y:auto;
-}
-#lobbyScreen h1{
-  font-size:clamp(26px,6vw,48px);font-weight:900;color:#FFD93D;
-  text-shadow:0 0 30px #ff8c00,0 0 60px #ff4500;letter-spacing:2px;text-align:center;
-  animation:pulse 2s ease infinite;
-}
-@keyframes pulse{0%,100%{text-shadow:0 0 30px #ff8c00,0 0 60px #ff4500}50%{text-shadow:0 0 50px #ffb700,0 0 100px #ff6600}}
-.lobby-card{
-  background:rgba(0,0,0,0.5);border:2px solid rgba(255,180,50,0.3);
-  border-radius:20px;padding:18px 20px;width:min(380px,96vw);
-  display:flex;flex-direction:column;gap:12px;
-}
-.lb-label{color:#FFD93D;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;}
-.lb-input{
-  background:rgba(255,255,255,0.08);border:2px solid rgba(255,180,50,0.4);
-  border-radius:12px;padding:11px 16px;font-size:16px;font-weight:700;color:white;
-  outline:none;width:100%;transition:.2s;
-}
-.lb-input:focus{border-color:#FFD93D;box-shadow:0 0 16px rgba(255,180,50,0.25);}
-.lb-input::placeholder{color:rgba(255,255,255,0.25);}
-.skin-row{display:flex;gap:8px;justify-content:center;}
-.skin-opt{
-  background:rgba(255,255,255,0.07);border:3px solid rgba(255,180,50,0.25);
-  border-radius:12px;padding:8px 12px;cursor:pointer;text-align:center;
-  font-size:22px;color:white;transition:.2s;flex:1;
-}
-.skin-opt span{display:block;font-size:10px;font-weight:700;color:rgba(255,220,150,0.7);margin-top:3px;}
-.skin-opt.sel{border-color:#FFD93D;background:rgba(255,180,50,0.15);}
-.color-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
-.copt{width:34px;height:34px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:.2s;flex-shrink:0;}
-.copt.sel,.copt:hover{border-color:white;transform:scale(1.2);}
+/* ── SCREENS ── */
+.screen { display:none; width:100%; height:100dvh; }
+.screen.active { display:flex; }
 
-/* Room buttons */
-.room-divider{display:flex;align-items:center;gap:10px;color:rgba(255,200,100,0.4);font-size:12px;}
-.room-divider::before,.room-divider::after{content:'';flex:1;height:1px;background:rgba(255,180,50,0.2);}
-.rooms-list{display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto;}
-.room-card{
-  background:rgba(255,180,50,0.06);border:2px solid rgba(255,180,50,0.2);
-  border-radius:14px;padding:10px 14px;display:flex;align-items:center;
-  justify-content:space-between;cursor:pointer;transition:.2s;
-}
-.room-card:hover{border-color:#FFD93D;background:rgba(255,180,50,0.12);}
-.room-card .rc-name{font-weight:800;font-size:14px;color:white;}
-.room-card .rc-info{font-size:11px;color:rgba(255,220,150,0.6);}
-.room-card .rc-join{
-  background:linear-gradient(135deg,#FF6B35,#FFD93D);
-  border:none;border-radius:10px;padding:6px 14px;
-  font-size:12px;font-weight:900;color:#1a0a00;cursor:pointer;
-}
-.btn-primary{
-  background:linear-gradient(135deg,#FF6B35,#FFD93D);border:none;border-radius:14px;
-  padding:14px;font-size:17px;font-weight:900;color:#1a0a00;cursor:pointer;width:100%;
-  box-shadow:0 6px 24px rgba(255,107,53,0.45);transition:.2s;
-}
-.btn-primary:active{transform:scale(0.97);}
-.btn-secondary{
-  background:rgba(255,180,50,0.12);border:2px solid rgba(255,180,50,0.3);
-  border-radius:14px;padding:12px;font-size:15px;font-weight:800;color:#FFD93D;
-  cursor:pointer;width:100%;transition:.2s;
-}
-.btn-secondary:active{transform:scale(0.97);}
-#roomCodeDisplay{
-  background:rgba(255,180,50,0.08);border:2px dashed rgba(255,180,50,0.4);
-  border-radius:14px;padding:12px;text-align:center;display:none;
-}
-#roomCodeDisplay .rc-big{font-size:28px;font-weight:900;color:#FFD93D;letter-spacing:6px;}
-#roomCodeDisplay .rc-hint{font-size:11px;color:rgba(255,220,150,0.6);margin-top:4px;}
-#joinCodeRow{display:flex;gap:8px;}
-#joinCodeRow .lb-input{flex:1;}
-#joinCodeRow .btn-primary{width:auto;padding:11px 18px;font-size:14px;}
+/* ── AUTH ── */
+#auth-screen { align-items:center; justify-content:center; flex-direction:column; background:var(--bg); }
+.auth-card { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:40px 32px; width:320px; text-align:center; }
+.brand { font-size:32px; font-weight:800; margin-bottom:4px; }
+.brand span { color:var(--accent); }
+.brand-sub { color:var(--muted); font-size:13px; margin-bottom:32px; }
+.auth-step { display:none; flex-direction:column; gap:12px; }
+.auth-step.active { display:flex; }
+.auth-title { font-size:16px; font-weight:700; margin-bottom:4px; text-align:left; }
+.inp { background:var(--surface2); border:1.5px solid var(--border); border-radius:14px; padding:13px 16px; color:var(--text); font-family:'Nunito',sans-serif; font-size:15px; outline:none; width:100%; transition:border-color .2s; }
+.inp::placeholder { color:var(--muted); }
+.inp:focus { border-color:var(--accent); }
+.btn { background:var(--accent); border:none; border-radius:14px; padding:14px; color:#fff; font-family:'Nunito',sans-serif; font-size:15px; font-weight:700; cursor:pointer; width:100%; transition:opacity .2s,transform .1s; }
+.btn:hover { opacity:.9; transform:translateY(-1px); }
+.btn.secondary { background:var(--surface2); color:var(--text); }
+.err { color:var(--accent2); font-size:12px; min-height:16px; text-align:left; }
 
-/* ══ HUD ══ */
-#hudTop{
-  position:fixed;top:0;left:0;right:0;z-index:20;
-  background:linear-gradient(180deg,rgba(13,5,0,0.97) 80%,transparent);
-  padding:7px 10px 14px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;
-  display:none;
-}
-.hud-pill{
-  background:rgba(0,0,0,0.65);border:2px solid rgba(255,180,50,0.3);
-  border-radius:12px;padding:5px 11px;display:flex;align-items:center;gap:5px;
-  font-size:12px;font-weight:700;color:white;white-space:nowrap;
-}
-.hud-pill .val{color:#FFD93D;font-size:14px;}
-.hud-pill .ico{font-size:16px;}
-#roomPill{background:rgba(255,107,53,0.18);border-color:rgba(255,107,53,0.4);}
-#playersPill{cursor:pointer;}
+/* ── MAIN APP ── */
+#app-screen { flex-direction:row; }
 
-/* Players list popup */
-#playersPopup{
-  position:fixed;top:52px;right:8px;z-index:35;
-  background:rgba(10,4,0,0.95);border:2px solid rgba(255,180,50,0.35);
-  border-radius:16px;padding:12px;min-width:160px;display:none;
-  backdrop-filter:blur(8px);
-}
-.pp-title{color:#FFD93D;font-weight:900;font-size:12px;margin-bottom:8px;text-transform:uppercase;}
-.pp-player{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,180,50,0.1);}
-.pp-player:last-child{border-bottom:none;}
-.pp-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.pp-name{font-size:13px;font-weight:700;color:white;}
-.pp-you{font-size:10px;color:#FFD93D;font-weight:700;}
+/* SIDEBAR */
+#sidebar { width:300px; min-width:300px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; }
+.sidebar-header { padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.my-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; flex-shrink:0; }
+.sidebar-title { font-size:18px; font-weight:800; }
+.icon-btn { width:36px; height:36px; border-radius:10px; background:var(--surface2); border:none; color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:background .2s; }
+.icon-btn:hover { background:var(--border); }
+.search-box { padding:10px 16px; border-bottom:1px solid var(--border); }
+.search-inp { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:10px 14px; color:var(--text); font-family:'Nunito',sans-serif; font-size:14px; outline:none; width:100%; }
+.search-inp::placeholder { color:var(--muted); }
+.chat-list { flex:1; overflow-y:auto; }
+.chat-item { display:flex; gap:12px; padding:12px 16px; cursor:pointer; transition:background .15s; align-items:center; border-bottom:1px solid rgba(255,255,255,.04); }
+.chat-item:hover { background:var(--surface2); }
+.chat-item.active { background:rgba(108,99,255,.15); }
+.chat-avatar { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; flex-shrink:0; }
+.chat-info { flex:1; min-width:0; }
+.chat-name { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-last { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+.chat-badge { background:var(--accent); color:#fff; border-radius:10px; font-size:11px; font-weight:700; padding:2px 7px; }
+.sidebar-empty { text-align:center; color:var(--muted); font-size:13px; padding:40px 20px; }
 
-#bagBtn{
-  position:fixed;top:66px;right:10px;z-index:25;
-  background:linear-gradient(135deg,#8b3a00,#c85a00);
-  border:3px solid #FFD93D;border-radius:50%;width:52px;height:52px;
-  font-size:24px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;box-shadow:0 4px 14px rgba(255,107,0,0.5);transition:.2s;display:none;
-  position:relative;
-}
-#bagBtn:active{transform:scale(0.92);}
-#bagBadge{position:absolute;top:-4px;right:-4px;background:#FF4757;color:white;
-  border-radius:50%;width:19px;height:19px;font-size:10px;font-weight:900;
-  display:flex;align-items:center;justify-content:center;}
-#inventory{
-  position:fixed;top:0;right:0;bottom:0;z-index:40;
-  width:min(300px,88vw);
-  background:linear-gradient(180deg,#1a0800,#2d1000);
-  border-left:3px solid rgba(255,180,50,0.4);
-  transform:translateX(100%);transition:.3s cubic-bezier(.34,1.56,.64,1);
-  display:flex;flex-direction:column;overflow:hidden;display:none;
-}
-#inventory.open{transform:translateX(0);}
-.inv-header{padding:14px;background:rgba(255,180,50,0.08);border-bottom:2px solid rgba(255,180,50,0.2);
-  display:flex;align-items:center;justify-content:space-between;}
-.inv-header h3{color:#FFD93D;font-size:17px;font-weight:900;}
-#invClose{background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:4px 8px;}
-.inv-scroll{flex:1;overflow-y:auto;padding:10px;}
-.inv-slot{
-  background:rgba(255,255,255,0.05);border:2px solid rgba(255,180,50,0.2);
-  border-radius:12px;padding:9px 12px;margin-bottom:7px;
-  display:flex;align-items:center;gap:10px;cursor:pointer;transition:.2s;
-}
-.inv-slot:hover,.inv-slot.selected{border-color:#FFD93D;background:rgba(255,180,50,0.1);}
-.inv-slot .slot-ico{font-size:28px;width:38px;text-align:center;}
-.inv-slot .slot-info{flex:1;}
-.inv-slot .slot-name{font-weight:800;font-size:13px;color:white;}
-.inv-slot .slot-qty{font-size:11px;color:rgba(255,220,150,0.7);}
-.inv-slot .slot-action{font-size:11px;color:#FFD93D;font-weight:700;}
+/* CHAT AREA */
+#chat-area { flex:1; display:flex; flex-direction:column; min-width:0; }
+#chat-placeholder { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px; color:var(--muted); }
+#chat-placeholder .ph-icon { font-size:48px; opacity:.3; }
+#chat-view { flex:1; display:none; flex-direction:column; }
+.chat-header { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 20px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.chat-header-info { flex:1; }
+.chat-header-name { font-size:15px; font-weight:700; }
+.chat-header-sub { font-size:12px; color:var(--muted); }
+.back-btn { display:none; }
+#msg-list { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:6px; }
+#msg-list::-webkit-scrollbar { width:4px; }
+#msg-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.msg-row { display:flex; gap:8px; animation:pop .2s ease; }
+@keyframes pop { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
+.msg-row.own { flex-direction:row-reverse; }
+.msg-av { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; align-self:flex-end; }
+.msg-bubble { max-width:68%; background:var(--surface2); border-radius:18px 18px 18px 4px; padding:10px 14px; }
+.msg-row.own .msg-bubble { background:linear-gradient(135deg,var(--accent),#8b5cf6); border-radius:18px 18px 4px 18px; }
+.msg-sender { font-size:11px; font-weight:700; margin-bottom:3px; }
+.msg-text { font-size:14px; line-height:1.5; word-break:break-word; }
+.msg-time { font-size:10px; color:rgba(255,255,255,.4); margin-top:4px; text-align:right; }
+.msg-row.own .msg-time { color:rgba(255,255,255,.6); }
+.system-msg { text-align:center; color:var(--muted); font-size:12px; padding:6px 0; }
+.chat-input-bar { background:var(--surface); border-top:1px solid var(--border); padding:12px 16px; display:flex; gap:10px; align-items:flex-end; flex-shrink:0; }
+.msg-textarea { flex:1; background:var(--surface2); border:1.5px solid var(--border); border-radius:16px; padding:11px 16px; color:var(--text); font-family:'Nunito',sans-serif; font-size:14px; outline:none; resize:none; max-height:100px; line-height:1.5; transition:border-color .2s; }
+.msg-textarea:focus { border-color:var(--accent); }
+.msg-textarea::placeholder { color:var(--muted); }
+.send-btn { width:42px; height:42px; background:var(--accent); border:none; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:transform .1s; }
+.send-btn:hover { transform:scale(1.05); }
+.send-btn svg { width:18px; height:18px; fill:white; }
 
-#ordersPanel{
-  position:fixed;left:7px;top:50%;transform:translateY(-50%);z-index:20;
-  width:min(190px,44vw);display:none;
-}
-.orders-box{background:rgba(8,3,0,0.88);border:2px solid rgba(255,180,50,0.35);
-  border-radius:16px;padding:10px;backdrop-filter:blur(8px);}
-.orders-title{color:#FFD93D;font-weight:900;font-size:12px;text-transform:uppercase;
-  letter-spacing:1px;margin-bottom:7px;}
-.order-card{
-  background:rgba(255,180,50,0.06);border:2px solid rgba(255,180,50,0.18);
-  border-radius:11px;padding:7px 9px;margin-bottom:5px;
-  display:flex;align-items:center;gap:7px;cursor:pointer;transition:.2s;
-  animation:slideCard .3s cubic-bezier(.34,1.56,.64,1);
-}
-.order-card:hover{border-color:#FFD93D;background:rgba(255,180,50,0.14);}
-.order-card.accepted{border-color:#95E77E;background:rgba(149,231,126,0.09);}
-@keyframes slideCard{from{transform:translateX(-18px);opacity:0}to{transform:translateX(0);opacity:1}}
-.order-emo{font-size:24px;}
-.order-info .o-name{font-size:11px;font-weight:800;color:white;}
-.order-info .o-dish{font-size:10px;color:#FFD93D;}
-.order-info .o-pts{font-size:10px;color:#95E77E;font-weight:700;}
-.order-patience{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:3px;overflow:hidden;}
-.order-pat-fill{height:100%;border-radius:2px;transition:width .5s linear;}
-.order-hint{font-size:9px;color:#FFD93D;font-weight:700;text-align:center;margin-top:2px;}
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; z-index:200; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:28px 24px; width:320px; }
+.modal-title { font-size:16px; font-weight:800; margin-bottom:20px; }
+.modal-actions { display:flex; gap:10px; margin-top:16px; }
+.modal-actions .btn { flex:1; }
 
-#actionBtn{
-  position:fixed;bottom:96px;right:11px;z-index:25;
-  width:66px;height:66px;background:linear-gradient(135deg,#FFD93D,#FF6B35);
-  border:none;border-radius:50%;cursor:pointer;
-  box-shadow:0 6px 22px rgba(255,107,53,0.55);transition:.2s;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  color:#1a0a00;gap:1px;display:none;
-}
-#actionBtn:active{transform:scale(0.9);}
-#actionEmoji{font-size:26px;line-height:1;}
-#actionLabel{font-size:9px;font-weight:900;color:#1a0a00;}
+/* COLORS */
+.c0{background:#6c63ff} .c1{background:#ff6584} .c2{background:#43e97b;color:#0e0e16!important}
+.c3{background:#f7c948;color:#0e0e16!important} .c4{background:#38bdf8} .c5{background:#f472b6}
+.c6{background:#34d399;color:#0e0e16!important} .c7{background:#fb923c}
 
-#joystickArea{position:fixed;bottom:18px;left:18px;z-index:25;width:128px;height:128px;display:none;}
-#joystickBase{width:128px;height:128px;background:rgba(255,255,255,0.04);
-  border:2px solid rgba(255,255,255,0.1);border-radius:50%;position:absolute;top:0;left:0;}
-#joystickKnob{width:50px;height:50px;background:rgba(255,220,100,0.16);
-  border:2px solid rgba(255,220,100,0.28);border-radius:50%;position:absolute;
-  top:50%;left:50%;transform:translate(-50%,-50%);}
-
-#storeBtn{
-  position:fixed;bottom:18px;right:11px;z-index:25;
-  background:linear-gradient(135deg,#2d8a2d,#4CAF50);
-  border:3px solid #95E77E;border-radius:50%;width:52px;height:52px;
-  font-size:24px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;box-shadow:0 4px 14px rgba(76,175,80,0.5);transition:.2s;display:none;
+@media(max-width:600px) {
+  #sidebar { width:100%; min-width:100%; position:absolute; z-index:10; height:100dvh; transition:transform .3s; }
+  #sidebar.hidden { transform:translateX(-100%); }
+  .back-btn { display:flex !important; }
 }
-#storeBtn:active{transform:scale(0.92);}
-#storePanel{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.75);display:none;align-items:flex-end;}
-#storePanel.open{display:flex;}
-.store-sheet{
-  background:linear-gradient(180deg,#1a0800,#2d1000);
-  border-radius:22px 22px 0 0;border-top:3px solid rgba(255,180,50,0.4);
-  width:100%;max-height:78vh;overflow:hidden;display:flex;flex-direction:column;
-  animation:sheetUp .3s cubic-bezier(.34,1.56,.64,1);
-}
-@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.store-header{padding:14px 18px;background:rgba(255,180,50,0.07);
-  border-bottom:2px solid rgba(255,180,50,0.18);
-  display:flex;align-items:center;justify-content:space-between;}
-.store-header h3{color:#FFD93D;font-size:18px;font-weight:900;}
-#storeClose{background:none;border:none;color:white;font-size:22px;cursor:pointer;}
-.store-scroll{flex:1;overflow-y:auto;padding:14px;display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
-.store-item{
-  background:rgba(255,255,255,0.04);border:2px solid rgba(255,180,50,0.18);
-  border-radius:14px;padding:12px;text-align:center;cursor:pointer;transition:.2s;
-}
-.store-item:hover{border-color:#FFD93D;background:rgba(255,180,50,0.09);transform:translateY(-2px);}
-.store-item.bought{border-color:#95E77E;background:rgba(149,231,126,0.07);}
-.store-item .si-ico{font-size:36px;margin-bottom:5px;}
-.store-item .si-name{font-weight:800;font-size:13px;color:white;margin-bottom:3px;}
-.store-item .si-desc{font-size:10px;color:rgba(255,220,150,0.65);margin-bottom:7px;}
-.store-item .si-price{font-size:14px;font-weight:900;color:#FFD93D;}
-.store-item .si-price.free{color:#95E77E;}
-
-#notifBox{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:60;
-  display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;}
-.notif{
-  background:rgba(0,0,0,0.88);color:white;border-radius:14px;
-  padding:9px 18px;font-weight:700;font-size:13px;
-  animation:nIn .3s cubic-bezier(.34,1.56,.64,1),nOut .3s ease 2.2s forwards;
-  border:2px solid rgba(255,180,50,0.3);white-space:nowrap;
-}
-.notif.g{border-color:#95E77E;background:rgba(0,55,10,0.92);}
-.notif.r{border-color:#FF4757;background:rgba(55,0,10,0.92);}
-.notif.y{border-color:#FFD93D;background:rgba(55,38,0,0.92);}
-@keyframes nIn{from{transform:scale(0) translateY(-10px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
-@keyframes nOut{to{transform:translateY(-18px);opacity:0}}
-.cpop{position:fixed;pointer-events:none;z-index:70;font-size:17px;font-weight:900;
-  color:#FFD93D;text-shadow:0 0 10px #FF6B35;animation:cpFloat 1.2s ease forwards;}
-@keyframes cpFloat{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-65px) scale(1.4);opacity:0}}
-#saveInd{position:fixed;bottom:7px;left:50%;transform:translateX(-50%);
-  color:rgba(255,180,50,0.5);font-size:10px;font-weight:700;z-index:10;display:none;}
-#flash{position:fixed;inset:0;background:white;opacity:0;pointer-events:none;z-index:90;transition:opacity .3s;}
-#minimap{position:fixed;top:52px;right:8px;z-index:20;width:88px;height:88px;display:none;}
-#minimapCanvas{width:88px;height:88px;border-radius:11px;
-  border:2px solid rgba(255,180,50,0.35);background:rgba(0,0,0,0.6);}
-
-/* Loading overlay */
-#loadingOverlay{
-  position:fixed;inset:0;z-index:200;background:rgba(13,5,0,0.95);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  display:none;
-}
-.spinner{width:48px;height:48px;border:4px solid rgba(255,180,50,0.2);
-  border-top-color:#FFD93D;border-radius:50%;animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-#loadingText{color:#FFD93D;font-size:16px;font-weight:700;}
-
-/* Firebase config modal */
-#configModal{
-  position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.85);
-  display:flex;align-items:center;justify-content:center;padding:16px;
-}
-.config-sheet{
-  background:linear-gradient(180deg,#1a0800,#2d1000);
-  border:2px solid rgba(255,180,50,0.4);border-radius:22px;
-  padding:22px;width:min(420px,96vw);max-height:90vh;overflow-y:auto;
-}
-.config-sheet h2{color:#FFD93D;font-size:20px;font-weight:900;margin-bottom:6px;}
-.config-sheet p{color:rgba(255,220,150,0.7);font-size:13px;margin-bottom:16px;line-height:1.5;}
-.config-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
-.config-step{
-  background:rgba(255,180,50,0.07);border:1px solid rgba(255,180,50,0.2);
-  border-radius:10px;padding:9px 12px;font-size:12px;color:rgba(255,220,150,0.8);
-  display:flex;gap:10px;align-items:flex-start;
-}
-.config-step .cs-num{color:#FFD93D;font-weight:900;flex-shrink:0;font-size:14px;}
-.config-sheet textarea{
-  background:rgba(0,0,0,0.4);border:2px solid rgba(255,180,50,0.3);
-  border-radius:12px;padding:12px;width:100%;height:130px;
-  font-size:11px;color:#95E77E;font-family:monospace;resize:vertical;outline:none;
-}
-.config-sheet textarea:focus{border-color:#FFD93D;}
-.config-hint{font-size:11px;color:rgba(255,220,150,0.5);margin:6px 0 14px;}
 </style>
 </head>
 <body>
-<canvas id="gameCanvas"></canvas>
-<canvas id="nametagCanvas"></canvas>
 
-<!-- Firebase Config Modal (first launch) -->
-<div id="configModal">
-  <div class="config-sheet">
-    <h2>🔥 Настройка Firebase</h2>
-    <p>Для мультиплеера нужен Firebase Realtime Database. Это бесплатно!</p>
-    <div class="config-steps">
-      <div class="config-step"><span class="cs-num">1</span><span>Иди на <b style="color:#FFD93D">console.firebase.google.com</b> → Создай проект</span></div>
-      <div class="config-step"><span class="cs-num">2</span><span>Добавь веб-приложение (значок &lt;/&gt;) → Скопируй firebaseConfig</span></div>
-      <div class="config-step"><span class="cs-num">3</span><span>В проекте: <b style="color:#FFD93D">Realtime Database</b> → Создать → Начать в тестовом режиме</span></div>
-      <div class="config-step"><span class="cs-num">4</span><span>Вставь свой firebaseConfig ниже и нажми Сохранить</span></div>
-    </div>
-    <textarea id="firebaseConfigInput" placeholder='{
-  "apiKey": "AIza...",
-  "authDomain": "...",
-  "databaseURL": "https://...-default-rtdb.firebaseio.com",
-  "projectId": "...",
-  "storageBucket": "...",
-  "messagingSenderId": "...",
-  "appId": "..."
-}'></textarea>
-    <div class="config-hint">⚠️ Без databaseURL мультиплеер не заработает!</div>
-    <button class="btn-primary" onclick="saveFirebaseConfig()">🔥 Сохранить и продолжить</button>
-    <div style="height:8px"></div>
-    <button class="btn-secondary" onclick="skipFirebase()">🎮 Играть без мультиплеера</button>
-  </div>
-</div>
+<!-- AUTH -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-card">
+    <div class="brand">Panda<span>Chat</span></div>
+    <div class="brand-sub">Мессенджер нового поколения 🐼</div>
 
-<!-- Lobby Screen -->
-<div id="lobbyScreen" style="display:none;">
-  <h1>🍰 Кафе Мечты 3D</h1>
-
-  <div class="lobby-card">
-    <div class="lb-label">Твоё имя</div>
-    <input id="nameInput" class="lb-input" placeholder="Введи имя..." maxlength="14" autocomplete="off"/>
-    <div class="lb-label">Скин</div>
-    <div class="skin-row" id="skinPicker">
-      <div class="skin-opt sel" data-skin="normal">😊<span>Обычный</span></div>
-      <div class="skin-opt" data-skin="panda">🐼<span>Панда</span></div>
-      <div class="skin-opt" data-skin="redblack">🔴<span>Крутой</span></div>
-    </div>
-    <div class="lb-label" id="colorLabel">Цвет</div>
-    <div class="color-row" id="colorPicker"></div>
-  </div>
-
-  <div class="lobby-card" id="multiplayerCard">
-    <div class="lb-label">🌐 Мультиплеер</div>
-
-    <button class="btn-primary" onclick="createRoom()">🏠 Создать комнату</button>
-
-    <div id="roomCodeDisplay">
-      <div class="rc-big" id="roomCodeBig">——</div>
-      <div class="rc-hint">Код комнаты — поделись с другом!</div>
+    <!-- Step 1: Phone -->
+    <div class="auth-step active" id="step-phone">
+      <div class="auth-title">Введи номер телефона</div>
+      <input class="inp" id="phone-inp" placeholder="+998 90 000 00 00" type="tel">
+      <div class="err" id="phone-err"></div>
+      <button class="btn" onclick="checkPhone()">Продолжить →</button>
     </div>
 
-    <div class="room-divider">или войти в комнату</div>
-
-    <div id="joinCodeRow">
-      <input id="joinCodeInput" class="lb-input" placeholder="Код комнаты..." maxlength="6" style="text-transform:uppercase;letter-spacing:3px;text-align:center;"/>
-      <button class="btn-primary" onclick="joinByCode()">Войти</button>
-    </div>
-
-    <div class="lb-label">Активные комнаты</div>
-    <div class="rooms-list" id="roomsList">
-      <div style="color:rgba(255,220,150,0.4);font-size:12px;text-align:center;padding:10px">Загрузка...</div>
+    <!-- Step 2: Register -->
+    <div class="auth-step" id="step-register">
+      <div class="auth-title">Создать аккаунт</div>
+      <input class="inp" id="username-inp" placeholder="Твой никнейм" maxlength="20">
+      <div class="err" id="reg-err"></div>
+      <button class="btn" onclick="register()">Зарегистрироваться</button>
+      <button class="btn secondary" onclick="showStep('phone')">← Назад</button>
     </div>
   </div>
-
-  <div class="lobby-card">
-    <button class="btn-primary" id="startBtn" onclick="startGame()">🚀 НАЧАТЬ ИГРУ</button>
-    <button class="btn-secondary" onclick="playOffline()">🎮 Одиночная игра</button>
-  </div>
 </div>
 
-<!-- Loading -->
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-  <div id="loadingText">Подключение...</div>
-</div>
+<!-- APP -->
+<div id="app-screen" class="screen">
 
-<!-- HUD -->
-<div id="hudTop">
-  <div class="hud-pill"><span class="ico">🪙</span><span id="hCoins" class="val">0</span></div>
-  <div class="hud-pill"><span class="ico">⭐</span><span id="hScore" class="val">0</span></div>
-  <div class="hud-pill"><span class="ico">🍽️</span>Ур.<span id="hLevel" class="val">1</span></div>
-  <div class="hud-pill" id="roomPill" style="display:none">🏠 <span id="hRoom" class="val">——</span></div>
-  <div class="hud-pill" id="playersPill" onclick="togglePlayersPopup()">👥 <span id="hPlayers" class="val">1</span></div>
-  <div class="hud-pill" id="heldPill" style="display:none"><span id="heldIco" class="ico">🍕</span><span id="heldName" class="val">—</span></div>
-</div>
-
-<div id="playersPopup">
-  <div class="pp-title">👥 Игроки</div>
-  <div id="ppList"></div>
-</div>
-
-<div id="bagBtn" style="display:none"><span>🎒</span><span id="bagBadge">0</span></div>
-<div id="inventory" style="display:none">
-  <div class="inv-header"><h3>🎒 Сумка</h3><button id="invClose">✕</button></div>
-  <div class="inv-scroll" id="invSlots"></div>
-</div>
-
-<div id="ordersPanel">
-  <div class="orders-box">
-    <div class="orders-title">📋 Заказы</div>
-    <div id="ordersList"></div>
-  </div>
-</div>
-
-<button id="actionBtn" style="display:none">
-  <span id="actionEmoji">⚡</span>
-  <span id="actionLabel">ВЗЯТЬ</span>
-</button>
-
-<div id="joystickArea" style="display:none">
-  <div id="joystickBase"></div>
-  <div id="joystickKnob"></div>
-</div>
-
-<div id="storeBtn" style="display:none">🏪</div>
-<div id="storePanel">
-  <div class="store-sheet">
-    <div class="store-header"><h3>🏪 Магазин</h3><button id="storeClose">✕</button></div>
-    <div class="store-scroll" id="storeItems"></div>
-  </div>
-</div>
-
-<div id="saveInd">💾 Сохранено</div>
-<div id="minimap" style="display:none"><canvas id="minimapCanvas" width="88" height="88"></canvas></div>
-<div id="notifBox"></div>
-<div id="flash"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<!-- Firebase будет подключён динамически -->
-<script>
-// ═══════════════════════════════════════════════════════
-//  FIREBASE CONFIG MANAGEMENT
-// ═══════════════════════════════════════════════════════
-let firebaseApp = null;
-let db = null;
-let roomRef = null;
-let onlineMode = false;
-
-function saveFirebaseConfig(){
-  const raw = document.getElementById('firebaseConfigInput').value.trim();
-  try {
-    const cfg = JSON.parse(raw);
-    if(!cfg.databaseURL){ alert('Нужен databaseURL!'); return; }
-    localStorage.setItem('fb_config', JSON.stringify(cfg));
-    document.getElementById('configModal').style.display='none';
-    initFirebase(cfg);
-    showLobby();
-  } catch(e) {
-    alert('Неверный JSON! Проверь скобки.');
-  }
-}
-
-function skipFirebase(){
-  document.getElementById('configModal').style.display='none';
-  onlineMode = false;
-  showLobby();
-}
-
-async function initFirebase(cfg){
-  try {
-    // Load Firebase SDK dynamically
-    await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
-    await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js');
-    if(typeof firebase === 'undefined') throw new Error('Firebase not loaded');
-    if(!firebase.apps.length) firebase.initializeApp(cfg);
-    db = firebase.database();
-    onlineMode = true;
-    notify('🔥 Firebase подключён!','g');
-    listenRooms();
-  } catch(e) {
-    console.error('Firebase init error:', e);
-    onlineMode = false;
-    notify('⚠️ Firebase недоступен — офлайн режим','r');
-  }
-}
-
-function loadScript(src){
-  return new Promise((res,rej)=>{
-    if(document.querySelector(`script[src="${src}"]`)){ res(); return; }
-    const s=document.createElement('script');
-    s.src=src; s.onload=res; s.onerror=rej;
-    document.head.appendChild(s);
-  });
-}
-
-// Check saved config on load
-window.addEventListener('load', ()=>{
-  const saved = localStorage.getItem('fb_config');
-  if(saved){
-    try {
-      const cfg = JSON.parse(saved);
-      document.getElementById('configModal').style.display='none';
-      initFirebase(cfg).then(()=>showLobby()).catch(()=>showLobby());
-    } catch(e) { showLobby(); }
-  }
-  // configModal stays visible by default
-});
-
-function showLobby(){
-  document.getElementById('lobbyScreen').style.display='flex';
-  if(!onlineMode){
-    document.getElementById('multiplayerCard').style.opacity='0.4';
-    document.getElementById('multiplayerCard').style.pointerEvents='none';
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-//  ROOM SYSTEM
-// ═══════════════════════════════════════════════════════
-let currentRoomId = null;
-let myPlayerId = null;
-const otherPlayers = {}; // id -> {mesh, data}
-
-function genRoomCode(){
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
-  return code;
-}
-
-function genPlayerId(){
-  return Math.random().toString(36).substr(2,9);
-}
-
-async function createRoom(){
-  if(!onlineMode){ notify('Firebase не подключён!','r'); return; }
-  const name = document.getElementById('nameInput').value.trim() || 'Игрок';
-  const code = genRoomCode();
-  showLoading('Создаю комнату...');
-  try {
-    await db.ref(`rooms/${code}`).set({
-      code, host: name, created: Date.now(),
-      status: 'waiting', playerCount: 1
-    });
-    currentRoomId = code;
-    document.getElementById('roomCodeDisplay').style.display='block';
-    document.getElementById('roomCodeBig').textContent = code;
-    notify(`🏠 Комната ${code} создана!`,'g');
-  } catch(e) {
-    notify('Ошибка создания комнаты','r');
-  }
-  hideLoading();
-}
-
-async function joinByCode(){
-  if(!onlineMode){ notify('Firebase не подключён!','r'); return; }
-  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
-  if(code.length !== 6){ notify('Введи 6-значный код!','r'); return; }
-  await joinRoom(code);
-}
-
-async function joinRoom(code){
-  if(!onlineMode){ notify('Firebase не подключён!','r'); return; }
-  showLoading('Подключаюсь...');
-  try {
-    const snap = await db.ref(`rooms/${code}`).get();
-    if(!snap.exists()){ notify('Комната не найдена!','r'); hideLoading(); return; }
-    currentRoomId = code;
-    document.getElementById('roomCodeDisplay').style.display='block';
-    document.getElementById('roomCodeBig').textContent = code;
-    notify(`✅ Вошёл в комнату ${code}!`,'g');
-  } catch(e) {
-    notify('Ошибка подключения','r');
-  }
-  hideLoading();
-}
-
-function listenRooms(){
-  if(!db) return;
-  db.ref('rooms').on('value', snap=>{
-    const rooms = snap.val() || {};
-    const list = document.getElementById('roomsList');
-    const entries = Object.values(rooms).filter(r=>r.status==='waiting'||r.status==='playing');
-    if(entries.length===0){
-      list.innerHTML='<div style="color:rgba(255,220,150,0.4);font-size:12px;text-align:center;padding:10px">Нет активных комнат</div>';
-      return;
-    }
-    list.innerHTML = entries.slice(0,5).map(r=>`
-      <div class="room-card" onclick="joinRoom('${r.code}')">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="my-avatar c0" id="my-avatar-el">?</div>
         <div>
-          <div class="rc-name">🏠 ${r.code}</div>
-          <div class="rc-info">${r.host} · ${r.playerCount||1} игр.</div>
+          <div style="font-size:14px;font-weight:700" id="my-name-el">—</div>
+          <div style="font-size:11px;color:var(--muted)" id="my-phone-el">—</div>
         </div>
-        <button class="rc-join">Войти</button>
       </div>
-    `).join('');
-  });
-}
-
-// ═══════════════════════════════════════════════════════
-//  PLAYER SYNC
-// ═══════════════════════════════════════════════════════
-let syncInterval = null;
-
-function startSync(){
-  if(!onlineMode || !currentRoomId) return;
-  myPlayerId = genPlayerId();
-  const playerRef = db.ref(`rooms/${currentRoomId}/players/${myPlayerId}`);
-
-  // Set player data
-  playerRef.set({
-    id: myPlayerId,
-    name: G.playerName,
-    color: G.playerColor,
-    skin: G.selectedSkin,
-    x: 0, y: 0.05, z: 0,
-    ry: 0,
-    coins: G.coins,
-    score: G.score,
-    online: true,
-    ts: Date.now()
-  });
-
-  // Remove on disconnect
-  playerRef.onDisconnect().remove();
-
-  // Update position periodically
-  syncInterval = setInterval(()=>{
-    if(!G.started) return;
-    playerRef.update({
-      x: playerGroup.position.x,
-      y: playerGroup.position.y,
-      z: playerGroup.position.z,
-      ry: playerGroup.rotation.y,
-      coins: G.coins,
-      score: G.score,
-      ts: Date.now()
-    });
-  }, 100);
-
-  // Listen for other players
-  db.ref(`rooms/${currentRoomId}/players`).on('value', snap=>{
-    const players = snap.val() || {};
-    const now = Date.now();
-
-    // Remove stale players
-    Object.keys(otherPlayers).forEach(id=>{
-      if(!players[id] || now - (players[id].ts||0) > 10000){
-        if(otherPlayers[id]?.mesh) scene.remove(otherPlayers[id].mesh);
-        delete otherPlayers[id];
-      }
-    });
-
-    // Add/update others
-    Object.entries(players).forEach(([id, data])=>{
-      if(id === myPlayerId) return;
-      if(now - (data.ts||0) > 10000) return;
-
-      if(!otherPlayers[id]){
-        // Create mesh for other player
-        const mesh = createRemotePlayer(data);
-        otherPlayers[id] = {mesh, data};
-        scene.add(mesh);
-        notify(`👋 ${data.name} присоединился!`,'y');
-      } else {
-        // Update position
-        const op = otherPlayers[id];
-        op.data = data;
-        op.mesh.position.set(data.x||0, data.y||0.05, data.z||0);
-        op.mesh.rotation.y = data.ry||0;
-      }
-    });
-
-    // Update HUD
-    const count = Object.keys(players).length;
-    document.getElementById('hPlayers').textContent = count;
-    updatePlayersPopup(players);
-  });
-
-  // Update room player count
-  db.ref(`rooms/${currentRoomId}`).update({playerCount: 1, status:'playing'});
-  document.getElementById('hRoom').textContent = currentRoomId;
-  document.getElementById('roomPill').style.display='flex';
-}
-
-function updatePlayersPopup(players){
-  const list = document.getElementById('ppList');
-  list.innerHTML = Object.values(players).map(p=>`
-    <div class="pp-player">
-      <div class="pp-dot" style="background:${p.color||'#FFD93D'}"></div>
-      <div class="pp-name">${p.name||'?'}</div>
-      ${p.id===myPlayerId?'<span class="pp-you">ты</span>':''}
+      <div style="display:flex;gap:6px">
+        <button class="icon-btn" onclick="openNewChat()" title="Новый чат">✉️</button>
+        <button class="icon-btn" onclick="openNewGroup()" title="Новая группа">👥</button>
+      </div>
     </div>
-  `).join('');
+    <div class="search-box">
+      <input class="search-inp" placeholder="🔍 Поиск чатов..." oninput="filterChats(this.value)">
+    </div>
+    <div class="chat-list" id="chat-list">
+      <div class="sidebar-empty">Нет чатов.<br>Нажми ✉️ чтобы начать</div>
+    </div>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div id="chat-area">
+    <div id="chat-placeholder">
+      <div class="ph-icon">💬</div>
+      <div>Выбери чат или начни новый</div>
+    </div>
+    <div id="chat-view">
+      <div class="chat-header">
+        <button class="icon-btn back-btn" onclick="backToSidebar()">←</button>
+        <div class="chat-avatar c0" id="cv-avatar">?</div>
+        <div class="chat-header-info">
+          <div class="chat-header-name" id="cv-name">—</div>
+          <div class="chat-header-sub" id="cv-sub">—</div>
+        </div>
+      </div>
+      <div id="msg-list"></div>
+      <div class="chat-input-bar">
+        <textarea class="msg-textarea" id="msg-inp" placeholder="Сообщение..." rows="1" maxlength="1000"></textarea>
+        <button class="send-btn" onclick="sendMsg()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: New Chat -->
+<div class="modal-overlay" id="modal-chat">
+  <div class="modal">
+    <div class="modal-title">💬 Новый личный чат</div>
+    <input class="inp" id="search-user-inp" placeholder="Никнейм или телефон пользователя" oninput="searchUser(this.value)">
+    <div id="user-search-results" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto"></div>
+    <div class="err" id="chat-err"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal('modal-chat')">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: New Group -->
+<div class="modal-overlay" id="modal-group">
+  <div class="modal">
+    <div class="modal-title">👥 Создать группу</div>
+    <input class="inp" id="group-name-inp" placeholder="Название группы" style="margin-bottom:10px">
+    <input class="inp" id="group-user-inp" placeholder="Добавить участника (никнейм)" oninput="searchGroupUser(this.value)">
+    <div id="group-search-results" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:120px;overflow-y:auto"></div>
+    <div id="group-members-list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
+    <div class="err" id="group-err"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal('modal-group')">Отмена</button>
+      <button class="btn" onclick="createGroup()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://zhetspshspxioffqzuyy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoZXRzcHNoc3B4aW9mZnF6dXl5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MDUwMzIsImV4cCI6MjA5NTk4MTAzMn0.H-Nfk5ZvSZFT9JFma3H5W5Yj6DxDcU3-56RFn0S_-NQ';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const COLORS = ['c0','c1','c2','c3','c4','c5','c6','c7'];
+function colorFor(str) { let h=0; for(let c of str) h=Math.imul(31,h)+c.charCodeAt(0)|0; return COLORS[Math.abs(h)%8]; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'}); }
+
+let ME = null;
+let currentChatId = null;
+let allChats = [];
+let groupMembers = [];
+let realtimeSub = null;
+
+// ── AUTH ──
+function showStep(name) {
+  document.querySelectorAll('.auth-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step-'+name).classList.add('active');
 }
 
-function togglePlayersPopup(){
-  const pp = document.getElementById('playersPopup');
-  pp.style.display = pp.style.display==='block' ? 'none' : 'block';
-}
-document.addEventListener('click', e=>{
-  if(!e.target.closest('#playersPill') && !e.target.closest('#playersPopup'))
-    document.getElementById('playersPopup').style.display='none';
-});
-
-function createRemotePlayer(data){
-  const g = new THREE.Group();
-  const c = parseInt((data.color||'#FF6B35').replace('#',''),16);
-  function rp(w,h,d,col,x,y,z){
-    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:col}));
-    m.position.set(x,y,z); m.castShadow=true; g.add(m); return m;
-  }
-  // Simple body
-  rp(0.88,1.12,0.54,c,0,1.5,0);
-  rp(0.8,0.8,0.8,0xFFCBA4,0,2.35,0);
-  rp(0.35,0.85,0.35,darken(c,50),-0.24,0.45,0);
-  rp(0.35,0.85,0.35,darken(c,50), 0.24,0.45,0);
-  rp(0.27,0.88,0.27,c,-0.7,1.05,0);
-  rp(0.27,0.88,0.27,c, 0.7,1.05,0);
-  return g;
-}
-
-function stopSync(){
-  if(syncInterval) clearInterval(syncInterval);
-  if(db && currentRoomId && myPlayerId){
-    db.ref(`rooms/${currentRoomId}/players/${myPlayerId}`).remove();
-  }
-  Object.values(otherPlayers).forEach(op=>{ if(op.mesh) scene.remove(op.mesh); });
-}
-
-// ═══════════════════════════════════════════════════════
-//  LOADING
-// ═══════════════════════════════════════════════════════
-function showLoading(text){
-  document.getElementById('loadingText').textContent = text||'Загрузка...';
-  document.getElementById('loadingOverlay').style.display='flex';
-}
-function hideLoading(){
-  document.getElementById('loadingOverlay').style.display='none';
-}
-
-// ═══════════════════════════════════════════════════════
-//  CONSTANTS
-// ═══════════════════════════════════════════════════════
-const SPAWN = {x:0, y:0, z:0};
-const PCOLORS = ['#FF6B35','#FFD93D','#4ECDC4','#95E77E','#C77DFF','#FF6B9D','#00CEC9','#FDCB6E','#E17055','#74B9FF'];
-const FOOD_ITEMS = [
-  {id:'coffee',   name:'Кофе',      ico:'☕', pts:20, col:0x6F4E37},
-  {id:'cake',     name:'Торт',      ico:'🎂', pts:50, col:0xFF69B4},
-  {id:'burger',   name:'Бургер',    ico:'🍔', pts:35, col:0xD2691E},
-  {id:'pizza',    name:'Пицца',     ico:'🍕', pts:45, col:0xFF6347},
-  {id:'sushi',    name:'Суши',      ico:'🍣', pts:60, col:0x98FF98},
-  {id:'icecream', name:'Мороженое', ico:'🍦', pts:25, col:0xFFF0F5},
-  {id:'juice',    name:'Сок',       ico:'🥤', pts:15, col:0xFFD700},
-  {id:'pasta',    name:'Паста',     ico:'🍝', pts:40, col:0xFFE4B5},
-];
-const NPC_NAMES = ['Миша','Катя','Вася','Оля','Дима','Лена','Коля','Маша','Петя','Соня'];
-const NPC_EMO   = ['😊','😄','🤩','😋','🥳','😍','🤗','😎','🥰','😁'];
-const STORE_ITEMS = [
-  {id:'table2', name:'Стол #2', desc:'Ещё один стол', ico:'🪑', price:100, type:'table'},
-  {id:'table3', name:'Стол #3', desc:'Третий стол',   ico:'🪑', price:200, type:'table'},
-  {id:'table4', name:'Стол #4', desc:'Четвёртый стол',ico:'🪑', price:350, type:'table'},
-  {id:'decor1', name:'Цветы',   desc:'Украшение',     ico:'🌸', price:80,  type:'decor'},
-  {id:'decor2', name:'Картины', desc:'Красивые',      ico:'🖼️', price:120, type:'decor'},
-  {id:'plant',  name:'Пальма',  desc:'Тропик',        ico:'🌴', price:150, type:'decor'},
-  {id:'lamp',   name:'Люстра',  desc:'Освещение',     ico:'💡', price:90,  type:'decor'},
-];
-
-// ═══════════════════════════════════════════════════════
-//  GAME STATE
-// ═══════════════════════════════════════════════════════
-const G = {
-  started:false,
-  playerName:'Игрок', playerColor:'#FF6B35',
-  coins:50, score:0, level:1,
-  bought:[], bag:[], heldItem:null,
-  orders:[], npcs:[],
-  counterZones:[], tableZones:[],
-  keys:{},
-  joystick:{x:0,y:0,active:false,startX:0,startY:0},
-  yaw:0, pitch:0.3,
-  velY:0, onGround:true,
-  lastTime:performance.now(),
-  nearInteractable:null,
-  selectedColorIdx:0, selectedSkin:'normal',
-};
-
-// ═══════════════════════════════════════════════════════
-//  THREE.JS SETUP
-// ═══════════════════════════════════════════════════════
-const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('gameCanvas'),antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.setSize(innerWidth,innerHeight);
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.1;
-
-const scene=new THREE.Scene();
-scene.fog=new THREE.Fog(0xfff4e0,20,60);
-scene.background=new THREE.Color(0xfff4e0);
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,150);
-camera.position.set(0,8,12);
-
-const sun=new THREE.DirectionalLight(0xfff5e0,1.6);
-sun.position.set(15,30,10); sun.castShadow=true;
-sun.shadow.mapSize.set(2048,2048);
-sun.shadow.camera.left=-40; sun.shadow.camera.right=40;
-sun.shadow.camera.top=40; sun.shadow.camera.bottom=-40;
-scene.add(sun);
-scene.add(new THREE.AmbientLight(0xffe0b0,0.9));
-scene.add(new THREE.HemisphereLight(0xfff5e0,0x8b7355,0.5));
-
-function box(w,h,d,color,x,y,z,opts={}){
-  const m=new THREE.Mesh(
-    new THREE.BoxGeometry(w,h,d),
-    new THREE.MeshLambertMaterial({color,...(opts.mat||{})})
-  );
-  m.position.set(x,y+h/2,z);
-  m.castShadow=opts.noShadow!==true; m.receiveShadow=true;
-  if(opts.parent) opts.parent.add(m); else scene.add(m);
-  return m;
-}
-function cyl(rt,rb,h,seg,color,x,y,z){
-  const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),new THREE.MeshLambertMaterial({color}));
-  m.position.set(x,y+h/2,z); m.castShadow=true; m.receiveShadow=true;
-  scene.add(m); return m;
-}
-function darken(hex,amt){
-  const r=Math.max(0,((hex>>16)&0xff)-amt),g=Math.max(0,((hex>>8)&0xff)-amt),b=Math.max(0,(hex&0xff)-amt);
-  return(r<<16)|(g<<8)|b;
-}
-function lighten(hex,amt){
-  const r=Math.min(255,((hex>>16)&0xff)+amt),g=Math.min(255,((hex>>8)&0xff)+amt),b=Math.min(255,(hex&0xff)+amt);
-  return(r<<16)|(g<<8)|b;
-}
-
-// ═══════════════════════════════════════════════════════
-//  WORLD
-// ═══════════════════════════════════════════════════════
-function buildWorld(){
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshLambertMaterial({color:0xF5DEB3}));
-  floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
-  for(let i=-5;i<5;i++) for(let j=-5;j<5;j++){
-    if((i+j)%2===0){
-      const t=new THREE.Mesh(new THREE.PlaneGeometry(5.98,5.98),new THREE.MeshLambertMaterial({color:0xFAEFD5}));
-      t.rotation.x=-Math.PI/2; t.position.set(i*6+3,0.01,j*6+3); t.receiveShadow=true; scene.add(t);
-    }
-  }
-  const wMat=new THREE.MeshLambertMaterial({color:0xFFF8F0});
-  const wh=5;
-  const bw=new THREE.Mesh(new THREE.BoxGeometry(28,wh,0.4),wMat); bw.position.set(0,wh/2,-14); scene.add(bw);
-  const lw=new THREE.Mesh(new THREE.BoxGeometry(0.4,wh,28),wMat); lw.position.set(-14,wh/2,0); scene.add(lw);
-  const rw=lw.clone(); rw.position.set(14,wh/2,0); scene.add(rw);
-  const ceil=new THREE.Mesh(new THREE.BoxGeometry(28,0.3,28),new THREE.MeshLambertMaterial({color:0xFFF5E6})); ceil.position.set(0,wh,0); scene.add(ceil);
-  for(const wx of [-7,0,7]){ box(3,2.5,0.3,0xFFE0B0,wx,1,-13.6); }
-  box(2.5,4,0.4,0xD4A96A,0,0,13.8);
-  const fw=new THREE.MeshLambertMaterial({color:0xFFF8F0});
-  const fl2=new THREE.Mesh(new THREE.BoxGeometry(11,5,0.4),fw); fl2.position.set(-8.5,2.5,14); scene.add(fl2);
-  const fr2=fl2.clone(); fr2.position.set(8.5,2.5,14); scene.add(fr2);
-}
-buildWorld();
-
-function buildCounters(){
-  // Back counter
-  box(8,1.1,1.8,0x8B4513,-5,0,-10); box(8.2,0.15,2,0xD4A96A,-5,1.1,-10);
-  [{x:-8,z:-10,food:'coffee',color:0x6F4E37},{x:-6,z:-10,food:'cake',color:0xFF69B4},{x:-4,z:-10,food:'burger',color:0xD2691E},{x:-2,z:-10,food:'pizza',color:0xFF6347}].forEach(s=>{
-    box(0.9,0.8,0.9,s.color,s.x,1.1,s.z); box(0.7,0.05,0.7,0xFFFFFF,s.x,1.95,s.z);
-    G.counterZones.push({pos:new THREE.Vector3(s.x,0,s.z),foodId:s.food,ico:FOOD_ITEMS.find(f=>f.id===s.food).ico});
-  });
-  box(5,1.1,1.8,0x8B4513,7,0,-10); box(5.2,0.15,2,0xD4A96A,7,1.1,-10);
-  [{x:5.5,z:-10,food:'sushi',color:0x98FF98},{x:7,z:-10,food:'icecream',color:0xFFF0F5},{x:8.5,z:-10,food:'juice',color:0xFFD700}].forEach(s=>{
-    box(0.9,0.8,0.9,s.color,s.x,1.1,s.z); box(0.7,0.05,0.7,0xFFFFFF,s.x,1.95,s.z);
-    G.counterZones.push({pos:new THREE.Vector3(s.x,0,s.z),foodId:s.food,ico:FOOD_ITEMS.find(f=>f.id===s.food).ico});
-  });
-  box(2,1.4,1.5,0x555555,-5,0,-12.5); box(1.8,0.1,1.3,0x333333,-5,1.4,-12.5);
-  for(const [bx,bz] of [[-5.5,-12.5],[-4.5,-12.5]]){ cyl(0.25,0.25,0.15,16,0x222222,bx,1.5,bz); cyl(0.15,0.15,0.3,8,0xFF4444,bx,1.65,bz); }
-
-  // Front counter (mirror)
-  box(8,1.1,1.8,0x8B4513,5,0,10); box(8.2,0.15,2,0xD4A96A,5,1.1,10);
-  [{x:8,z:10,food:'pasta',color:0xFFE4B5},{x:6,z:10,food:'sushi',color:0x98FF98},{x:4,z:10,food:'icecream',color:0xFFF0F5},{x:2,z:10,food:'juice',color:0xFFD700}].forEach(s=>{
-    box(0.9,0.8,0.9,s.color,s.x,1.1,s.z); box(0.7,0.05,0.7,0xFFFFFF,s.x,1.95,s.z);
-    G.counterZones.push({pos:new THREE.Vector3(s.x,0,s.z),foodId:s.food,ico:FOOD_ITEMS.find(f=>f.id===s.food).ico});
-  });
-  box(5,1.1,1.8,0x8B4513,-7,0,10); box(5.2,0.15,2,0xD4A96A,-7,1.1,10);
-  [{x:-5.5,z:10,food:'coffee',color:0x6F4E37},{x:-7,z:10,food:'cake',color:0xFF69B4},{x:-8.5,z:10,food:'burger',color:0xD2691E}].forEach(s=>{
-    box(0.9,0.8,0.9,s.color,s.x,1.1,s.z); box(0.7,0.05,0.7,0xFFFFFF,s.x,1.95,s.z);
-    G.counterZones.push({pos:new THREE.Vector3(s.x,0,s.z),foodId:s.food,ico:FOOD_ITEMS.find(f=>f.id===s.food).ico});
-  });
-  box(2,1.4,1.5,0x555555,5,0,12.5); box(1.8,0.1,1.3,0x333333,5,1.4,12.5);
-  for(const [bx,bz] of [[4.5,12.5],[5.5,12.5]]){ cyl(0.25,0.25,0.15,16,0x222222,bx,1.5,bz); cyl(0.15,0.15,0.3,8,0xFF4444,bx,1.65,bz); }
-}
-buildCounters();
-
-const TABLE_POSITIONS=[{x:-6,z:-2},{x:0,z:-2},{x:6,z:-2},{x:-6,z:4},{x:0,z:4},{x:6,z:4}];
-const tableObjs=[];
-function buildTable(pos,idx){
-  const g=new THREE.Group();
-  box(2.2,0.12,1.4,0x8B4513,0,0.85,0,{parent:g}); box(2.4,0.08,1.6,0xA0522D,0,0.97,0,{parent:g});
-  for(const [lx,lz] of [[-0.9,0.55],[0.9,0.55],[-0.9,-0.55],[0.9,-0.55]]) box(0.1,0.85,0.1,0x6B3A2A,lx,0,lz,{parent:g});
-  box(1.8,0.02,1.1,0xFFF9F0,0,0.98,0,{parent:g});
-  g.position.set(pos.x,0,pos.z); scene.add(g); tableObjs.push(g);
-  G.tableZones.push({pos:new THREE.Vector3(pos.x,0,pos.z),mesh:g,occupied:false,npc:null,idx});
-  return g;
-}
-TABLE_POSITIONS.forEach((p,i)=>{ if(i===0||G.bought.includes('table'+(i+1))) buildTable(p,i); });
-
-box(4,0.25,4,0xFF6B35,0,0,0); box(3.5,0.1,3.5,0xFFD93D,0,0.25,0);
-
-function addDecor(){
-  for(const [x,z] of [[-12,11],[12,11],[-12,-12],[12,-12]]){
-    cyl(0.3,0.35,0.5,8,0xA0522D,x,0,z);
-    const f=new THREE.Mesh(new THREE.SphereGeometry(0.7,8,6),new THREE.MeshLambertMaterial({color:0x228B22}));
-    f.position.set(x,1.2,z); f.castShadow=true; scene.add(f);
-  }
-  for(const [lx,lz] of [[-5,-5],[5,-5],[0,2],[-5,5],[5,5]]){
-    const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.15,8,8),new THREE.MeshLambertMaterial({color:0xFFFF99,emissive:0xFFFF99,emissiveIntensity:0.8}));
-    bulb.position.set(lx,2.9,lz); scene.add(bulb);
-    const ptLight=new THREE.PointLight(0xFFF5C0,0.6,6); ptLight.position.set(lx,2.8,lz); scene.add(ptLight);
-  }
-}
-addDecor();
-
-// ═══════════════════════════════════════════════════════
-//  PLAYER
-// ═══════════════════════════════════════════════════════
-const playerGroup=new THREE.Group();
-scene.add(playerGroup);
-playerGroup.position.set(SPAWN.x,0.05,SPAWN.z);
-
-function buildPlayer(hexColor,skinId){
-  while(playerGroup.children.length) playerGroup.remove(playerGroup.children[0]);
-  const isPanda=skinId==='panda'||G.playerName.toLowerCase()==='панда';
-  const isRB=skinId==='redblack';
-  const OFS=0.45;
-  function bp(w,h,d,col,x,y,z){
-    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:col}));
-    m.position.set(x,y+OFS,z); m.castShadow=true; playerGroup.add(m); return m;
-  }
-  if(isPanda){
-    bp(0.9,1.15,0.55,0xF0F0F0,0,1.07,0); bp(0.85,0.85,0.85,0xF5F5F5,0,1.92,0);
-    [-0.24,0.24].forEach((lx,i)=>{const l=bp(0.36,0.85,0.36,0x111111,lx,0.0,0);l.name='leg'+i;});
-    [-0.72,0.72].forEach((ax,i)=>{const a=bp(0.28,0.9,0.28,0x111111,ax,0.6,0);a.name='arm'+i;});
-  } else if(isRB){
-    bp(0.9,1.15,0.55,0xCC0000,0,1.07,0); bp(0.82,0.82,0.82,0x111111,0,1.92,0);
-    [-0.24,0.24].forEach((lx,i)=>{const l=bp(0.36,0.85,0.36,0x111111,lx,0.0,0);l.name='leg'+i;});
-    [-0.72,0.72].forEach((ax,i)=>{const a=bp(0.28,0.9,0.28,0xCC0000,ax,0.6,0);a.name='arm'+i;});
+async function checkPhone() {
+  const phone = document.getElementById('phone-inp').value.trim();
+  if (!phone) { document.getElementById('phone-err').textContent = 'Введи номер'; return; }
+  document.getElementById('phone-err').textContent = '';
+  const { data } = await db.from('users').select('*').eq('phone', phone).single();
+  if (data) {
+    ME = data;
+    enterApp();
   } else {
-    const c=parseInt(hexColor.replace('#',''),16),dk=darken(c,50);
-    bp(0.88,1.12,0.54,c,0,1.07,0); bp(0.8,0.8,0.8,0xFFCBA4,0,1.9,0);
-    [-0.24,0.24].forEach((lx,i)=>{const l=bp(0.35,0.85,0.35,dk,lx,0.0,0);l.name='leg'+i;});
-    [-0.7,0.7].forEach((ax,i)=>{const a=bp(0.27,0.88,0.27,c,ax,0.6,0);a.name='arm'+i;});
-    bp(0.82,0.18,0.82,0x3B1F00,0,2.33,0);
-  }
-  playerGroup.add(heldMesh);
-}
-
-const heldMesh=new THREE.Mesh(new THREE.BoxGeometry(0.35,0.35,0.35),new THREE.MeshLambertMaterial({color:0xFFFFFF}));
-heldMesh.visible=false; heldMesh.position.set(0.55,2.1,0.1);
-
-// ═══════════════════════════════════════════════════════
-//  NPC
-// ═══════════════════════════════════════════════════════
-function createNPC(tableZone){
-  const name=NPC_NAMES[Math.floor(Math.random()*NPC_NAMES.length)];
-  const emo=NPC_EMO[Math.floor(Math.random()*NPC_EMO.length)];
-  const food=FOOD_ITEMS[Math.floor(Math.random()*FOOD_ITEMS.length)];
-  const colHex=PCOLORS[Math.floor(Math.random()*PCOLORS.length)];
-  const c=parseInt(colHex.replace('#',''),16);
-  const g=new THREE.Group();
-  function np(w,h,d,col,x,y,z){
-    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:col}));
-    m.position.set(x,y,z); m.castShadow=true; g.add(m);
-  }
-  np(0.72,1.0,0.44,c,0,1.15,0); np(0.72,0.72,0.72,0xFFCBA4,0,1.97,0);
-  np(0.24,0.82,0.24,c,-0.60,1.1,0); np(0.24,0.82,0.24,c,0.60,1.1,0);
-  [-0.2,0.2].forEach(lx=>{
-    const th=new THREE.Mesh(new THREE.BoxGeometry(0.27,0.62,0.27),new THREE.MeshLambertMaterial({color:darken(c,50)}));
-    th.rotation.x=Math.PI/2; th.position.set(lx,0.57,0.22); g.add(th);
-  });
-  const bubbleMesh=new THREE.Mesh(new THREE.PlaneGeometry(1.4,0.5),new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:0.9,side:THREE.DoubleSide}));
-  bubbleMesh.position.set(0,2.72,0); g.add(bubbleMesh);
-  g.position.set(tableZone.pos.x,0,tableZone.pos.z);
-  g.rotation.y=Math.atan2(tableZone.pos.x,tableZone.pos.z)+Math.PI;
-  scene.add(g);
-  const npcObj={mesh:g,name,emo,food,colHex,table:tableZone,patience:100,state:'waiting',bobT:0,bubbleMesh};
-  tableZone.occupied=true; tableZone.npc=npcObj;
-  G.npcs.push(npcObj); addOrderCard(npcObj);
-  return npcObj;
-}
-function removeNPC(npc){
-  scene.remove(npc.mesh); npc.table.occupied=false; npc.table.npc=null;
-  G.npcs=G.npcs.filter(n=>n!==npc); G.orders=G.orders.filter(o=>o.npc!==npc); renderOrders();
-}
-
-// ═══════════════════════════════════════════════════════
-//  ORDERS
-// ═══════════════════════════════════════════════════════
-function addOrderCard(npc){ G.orders.push({npc,accepted:false}); renderOrders(); }
-function renderOrders(){
-  const el=document.getElementById('ordersList'); el.innerHTML='';
-  G.orders.forEach(ord=>{
-    const d=document.createElement('div');
-    d.className='order-card'+(ord.accepted?' accepted':'');
-    const pct=ord.npc.patience, patColor=pct>60?'#95E77E':pct>30?'#FFD93D':'#FF4757';
-    d.innerHTML=`<span class="order-emo">${ord.npc.emo}</span><div class="order-info">
-      <div class="o-name">${ord.npc.name}</div><div class="o-dish">${ord.npc.food.ico} ${ord.npc.food.name}</div>
-      <div class="o-pts">+${ord.npc.food.pts}</div>
-      <div class="order-patience"><div class="order-pat-fill" style="width:${pct}%;background:${patColor}"></div></div>
-      <div class="order-hint">${ord.accepted?'✅ Подай блюдо!':'👆 Принять'}</div></div>`;
-    d.addEventListener('click',()=>{ if(!ord.accepted) acceptOrder(ord); });
-    el.appendChild(d);
-  });
-}
-function acceptOrder(ord){ ord.accepted=true; ord.npc.state='accepted'; notify(`✅ ${ord.npc.food.ico} для ${ord.npc.name}`,'g'); renderOrders(); }
-
-// ═══════════════════════════════════════════════════════
-//  INVENTORY
-// ═══════════════════════════════════════════════════════
-function addToBag(foodId){
-  const food=FOOD_ITEMS.find(f=>f.id===foodId); if(!food) return;
-  let s=G.bag.find(s=>s.id===foodId);
-  if(!s) G.bag.push({id:foodId,name:food.name,ico:food.ico,qty:1}); else s.qty++;
-  document.getElementById('bagBadge').textContent=G.bag.reduce((s,b)=>s+b.qty,0);
-  renderBag();
-}
-function removeFromBag(foodId){
-  let s=G.bag.find(s=>s.id===foodId); if(!s||s.qty<=0) return false;
-  s.qty--; if(s.qty<=0) G.bag=G.bag.filter(s=>s.id!==foodId);
-  document.getElementById('bagBadge').textContent=G.bag.reduce((s,b)=>s+b.qty,0); renderBag(); return true;
-}
-function renderBag(){
-  const el=document.getElementById('invSlots'); el.innerHTML='';
-  if(!G.bag.length){ el.innerHTML='<div style="color:rgba(255,220,150,0.4);text-align:center;padding:24px;font-size:13px">Сумка пуста</div>'; return; }
-  G.bag.forEach(slot=>{
-    const d=document.createElement('div');
-    d.className='inv-slot'+(G.heldItem===slot.id?' selected':'');
-    d.innerHTML=`<span class="slot-ico">${slot.ico}</span><div class="slot-info"><div class="slot-name">${slot.name}</div><div class="slot-qty">×${slot.qty}</div></div><span class="slot-action">Взять →</span>`;
-    d.addEventListener('click',()=>{ G.heldItem=slot.id; updateHeldDisplay(); document.getElementById('inventory').classList.remove('open'); notify(`${slot.ico} ${slot.name}`,'y'); });
-    el.appendChild(d);
-  });
-}
-function updateHeldDisplay(){
-  const pill=document.getElementById('heldPill');
-  if(G.heldItem){ const f=FOOD_ITEMS.find(x=>x.id===G.heldItem); pill.style.display='flex'; document.getElementById('heldIco').textContent=f?f.ico:'?'; document.getElementById('heldName').textContent=f?f.name:'—'; heldMesh.visible=true; heldMesh.material.color.setHex(f?f.col:0xFFFFFF); }
-  else { pill.style.display='none'; heldMesh.visible=false; }
-}
-
-// ═══════════════════════════════════════════════════════
-//  STORE
-// ═══════════════════════════════════════════════════════
-function renderStore(){
-  const el=document.getElementById('storeItems'); el.innerHTML='';
-  STORE_ITEMS.forEach(item=>{
-    const bought=G.bought.includes(item.id);
-    const d=document.createElement('div'); d.className='store-item'+(bought?' bought':'');
-    d.innerHTML=`<div class="si-ico">${item.ico}</div><div class="si-name">${item.name}</div><div class="si-desc">${item.desc}</div><div class="si-price ${bought?'free':''}">${bought?'✅':'🪙 '+item.price}</div>`;
-    if(!bought) d.addEventListener('click',()=>buyItem(item));
-    el.appendChild(d);
-  });
-}
-function buyItem(item){
-  if(G.coins<item.price){ notify('Не хватает монет!','r'); return; }
-  G.coins-=item.price; G.bought.push(item.id);
-  if(item.type==='table'){ const idx=parseInt(item.id.replace('table',''))-1; if(TABLE_POSITIONS[idx]) buildTable(TABLE_POSITIONS[idx],idx); }
-  notify(`✅ ${item.ico} ${item.name}`,'g'); coinPop(-item.price); updateHUD(); renderStore();
-}
-
-// ═══════════════════════════════════════════════════════
-//  INTERACTION
-// ═══════════════════════════════════════════════════════
-function checkInteractables(){
-  const pp=playerGroup.position; let nearest=null,nearDist=2.8;
-  G.counterZones.forEach(cz=>{ const d=pp.distanceTo(cz.pos); if(d<nearDist){ nearDist=d; nearest={type:'counter',data:cz}; } });
-  G.tableZones.forEach(tz=>{ if(tz.occupied&&tz.npc&&tz.npc.state==='accepted'){ const d=pp.distanceTo(tz.pos); if(d<3.2) nearest={type:'table',data:tz}; } });
-  G.nearInteractable=nearest;
-  const btn=document.getElementById('actionBtn'),emo=document.getElementById('actionEmoji'),lbl=document.getElementById('actionLabel');
-  if(nearest){ btn.style.display='flex'; if(nearest.type==='counter'){emo.textContent=nearest.data.ico;lbl.textContent='ВЗЯТЬ';}else{emo.textContent='🍽️';lbl.textContent='ПОДАТЬ';} }
-  else btn.style.display='none';
-}
-function doAction(){
-  if(!G.nearInteractable) return;
-  const ni=G.nearInteractable;
-  if(ni.type==='counter'){
-    addToBag(ni.data.foodId); G.heldItem=ni.data.foodId; updateHeldDisplay();
-    notify(`${ni.data.ico} взял ${FOOD_ITEMS.find(f=>f.id===ni.data.foodId).name}!`,'y');
-  } else if(ni.type==='table'){
-    const tz=ni.data,npc=tz.npc;
-    const accepted=G.orders.find(o=>o.npc===npc&&o.accepted);
-    if(!accepted){ notify('Сначала прими заказ! 📋','r'); return; }
-    if(!G.heldItem){ notify('Возьми еду! 🍽️','r'); return; }
-    if(G.heldItem!==npc.food.id){ notify(`Нужно: ${npc.food.ico} ${npc.food.name}!`,'r'); return; }
-    if(!removeFromBag(G.heldItem)){ notify('Нет такой еды!','r'); return; }
-    const earned=npc.food.pts;
-    G.coins+=Math.ceil(earned*0.5); G.score+=earned; G.level=Math.floor(G.score/200)+1;
-    coinPop(earned); notify(`🎉 ${npc.name} доволен! +${earned}`,'g');
-    G.heldItem=null; updateHeldDisplay(); npc.state='leaving';
-    setTimeout(()=>removeNPC(npc),2000);
-    G.orders=G.orders.filter(o=>o.npc!==npc); renderOrders(); updateHUD();
+    document.getElementById('step-phone').classList.remove('active');
+    showStep('register');
   }
 }
 
-// ═══════════════════════════════════════════════════════
-//  HUD / NOTIF
-// ═══════════════════════════════════════════════════════
-function updateHUD(){ document.getElementById('hCoins').textContent=G.coins; document.getElementById('hScore').textContent=G.score; document.getElementById('hLevel').textContent=G.level; }
-function notify(msg,type=''){
-  const box=document.getElementById('notifBox'),d=document.createElement('div');
-  d.className='notif '+type; d.textContent=msg; box.appendChild(d); setTimeout(()=>d.remove(),2600);
+async function register() {
+  const phone = document.getElementById('phone-inp').value.trim();
+  const username = document.getElementById('username-inp').value.trim();
+  if (!username) { document.getElementById('reg-err').textContent = 'Введи никнейм'; return; }
+  document.getElementById('reg-err').textContent = '';
+  const color = colorFor(username);
+  const { data, error } = await db.from('users').insert({ username, phone, avatar_color: color }).select().single();
+  if (error) { document.getElementById('reg-err').textContent = 'Никнейм занят, попробуй другой'; return; }
+  ME = data;
+  enterApp();
 }
-function coinPop(amt){
-  const d=document.createElement('div'); d.className='cpop';
-  d.textContent=(amt>0?'+':'')+amt+(amt>0?'🪙':''); d.style.left=(30+Math.random()*40)+'%'; d.style.top='40%';
-  document.body.appendChild(d); setTimeout(()=>d.remove(),1300);
-}
-function spawnFlash(){ const f=document.getElementById('flash'); f.style.opacity='1'; setTimeout(()=>f.style.opacity='0',300); }
 
-// ═══════════════════════════════════════════════════════
-//  NAMETAGS
-// ═══════════════════════════════════════════════════════
-const ntCanvas=document.getElementById('nametagCanvas');
-ntCanvas.width=innerWidth; ntCanvas.height=innerHeight;
-const ntCtx=ntCanvas.getContext('2d');
-function drawNametags(){
-  ntCtx.clearRect(0,0,ntCanvas.width,ntCanvas.height);
-  if(!G.started) return;
-  const chars=[{mesh:playerGroup,name:G.playerName,color:G.playerColor,off:2.8}];
-  G.npcs.forEach(n=>chars.push({mesh:n.mesh,name:n.name+' '+n.food.ico,color:n.colHex,off:2.4}));
-  Object.values(otherPlayers).forEach(op=>chars.push({mesh:op.mesh,name:op.data.name||'?',color:op.data.color||'#4ECDC4',off:2.8}));
-  chars.forEach(({mesh,name,color,off})=>{
-    const pos=mesh.position.clone(); pos.y+=off;
-    const p=pos.project(camera); if(p.z>1) return;
-    const sx=(p.x+1)/2*ntCanvas.width,sy=(-p.y+1)/2*ntCanvas.height;
-    const dist=camera.position.distanceTo(mesh.position); if(dist>25) return;
-    const alpha=Math.max(0,1-dist/25),fs=Math.max(11,Math.min(16,180/dist));
-    ntCtx.font=`bold ${fs}px 'Segoe UI',sans-serif`; ntCtx.textAlign='center';
-    const tw=ntCtx.measureText(name).width;
-    ntCtx.globalAlpha=alpha*0.8; ntCtx.fillStyle='rgba(0,0,0,0.65)';
-    ntCtx.beginPath();
-    if(ntCtx.roundRect) ntCtx.roundRect(sx-tw/2-5,sy-fs-3,tw+10,fs+6,5); else ntCtx.rect(sx-tw/2-5,sy-fs-3,tw+10,fs+6);
-    ntCtx.fill(); ntCtx.globalAlpha=alpha; ntCtx.fillStyle=color;
-    ntCtx.fillText(name,sx,sy); ntCtx.globalAlpha=1;
+function enterApp() {
+  document.getElementById('auth-screen').classList.remove('active');
+  document.getElementById('app-screen').classList.add('active');
+  document.getElementById('my-name-el').textContent = '@' + ME.username;
+  document.getElementById('my-phone-el').textContent = ME.phone;
+  const av = document.getElementById('my-avatar-el');
+  av.textContent = ME.username[0].toUpperCase();
+  av.className = 'my-avatar ' + (ME.avatar_color || colorFor(ME.username));
+  loadChats();
+  subscribeToNewMessages();
+}
+
+// ── CHATS ──
+async function loadChats() {
+  const { data: memberships } = await db.from('chat_members').select('chat_id').eq('user_id', ME.id);
+  if (!memberships || memberships.length === 0) { renderChatList([]); return; }
+  const chatIds = memberships.map(m => m.chat_id);
+  const { data: chats } = await db.from('chats').select('*').in('id', chatIds).order('created_at', {ascending:false});
+  allChats = chats || [];
+  renderChatList(allChats);
+}
+
+function renderChatList(chats) {
+  const el = document.getElementById('chat-list');
+  if (!chats.length) { el.innerHTML = '<div class="sidebar-empty">Нет чатов.<br>Нажми ✉️ чтобы начать</div>'; return; }
+  el.innerHTML = chats.map(c => {
+    const color = colorFor(c.name || c.id);
+    const icon = c.is_group ? '👥' : c.name[0].toUpperCase();
+    return `<div class="chat-item${currentChatId===c.id?' active':''}" onclick="openChat('${c.id}')">
+      <div class="chat-avatar ${color}">${icon}</div>
+      <div class="chat-info">
+        <div class="chat-name">${esc(c.name)}</div>
+        <div class="chat-last">${c.is_group ? 'Группа' : 'Личный чат'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterChats(q) {
+  const filtered = allChats.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
+  renderChatList(filtered);
+}
+
+// ── OPEN CHAT ──
+async function openChat(chatId) {
+  currentChatId = chatId;
+  const chat = allChats.find(c => c.id === chatId);
+  if (!chat) return;
+
+  // Update sidebar active
+  document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.chat-item').forEach(el => {
+    if (el.onclick.toString().includes(chatId)) el.classList.add('active');
+  });
+
+  // Show chat view
+  document.getElementById('chat-placeholder').style.display = 'none';
+  const cv = document.getElementById('chat-view');
+  cv.style.display = 'flex';
+
+  const color = colorFor(chat.name || chat.id);
+  const av = document.getElementById('cv-avatar');
+  av.textContent = chat.is_group ? '👥' : chat.name[0].toUpperCase();
+  av.className = 'chat-avatar ' + color;
+  document.getElementById('cv-name').textContent = chat.name;
+  document.getElementById('cv-sub').textContent = chat.is_group ? 'Группа' : 'Личный чат';
+
+  // Mobile: hide sidebar
+  if (window.innerWidth <= 600) {
+    document.getElementById('sidebar').classList.add('hidden');
+  }
+
+  // Load messages
+  const msgList = document.getElementById('msg-list');
+  msgList.innerHTML = '';
+  const { data: msgs } = await db.from('messages').select('*').eq('chat_id', chatId).order('created_at', {ascending:true}).limit(100);
+  (msgs || []).forEach(m => appendMsg(m));
+  msgList.scrollTop = msgList.scrollHeight;
+
+  // Realtime
+  if (realtimeSub) db.removeChannel(realtimeSub);
+  realtimeSub = db.channel('chat-' + chatId)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages', filter:`chat_id=eq.${chatId}` }, p => {
+      appendMsg(p.new);
+      msgList.scrollTop = msgList.scrollHeight;
+    }).subscribe();
+}
+
+function appendMsg(m) {
+  const list = document.getElementById('msg-list');
+  const isOwn = m.user_id === ME.id;
+  const color = m.avatar_color || colorFor(m.username || '?');
+  const div = document.createElement('div');
+  div.className = 'msg-row' + (isOwn ? ' own' : '');
+  div.innerHTML = `
+    ${!isOwn ? `<div class="msg-av ${color}">${(m.username||'?')[0].toUpperCase()}</div>` : ''}
+    <div class="msg-bubble">
+      ${!isOwn ? `<div class="msg-sender" style="color:${colorToCss(color)}">${esc(m.username||'')}</div>` : ''}
+      <div class="msg-text">${esc(m.text)}</div>
+      <div class="msg-time">${fmtTime(m.created_at)}</div>
+    </div>
+    ${isOwn ? `<div class="msg-av ${color}">${(m.username||'?')[0].toUpperCase()}</div>` : ''}`;
+  list.appendChild(div);
+}
+
+function colorToCss(c) {
+  const map = {c0:'#6c63ff',c1:'#ff6584',c2:'#43e97b',c3:'#f7c948',c4:'#38bdf8',c5:'#f472b6',c6:'#34d399',c7:'#fb923c'};
+  return map[c] || '#6c63ff';
+}
+
+async function sendMsg() {
+  const inp = document.getElementById('msg-inp');
+  const text = inp.value.trim();
+  if (!text || !currentChatId) return;
+  inp.value = ''; inp.style.height = 'auto';
+  await db.from('messages').insert({
+    chat_id: currentChatId, user_id: ME.id,
+    username: ME.username, text,
+    avatar_color: ME.avatar_color || colorFor(ME.username)
   });
 }
 
-// Minimap
-const mmCanvas=document.getElementById('minimapCanvas'),mmCtx=mmCanvas.getContext('2d');
-function drawMinimap(){
-  mmCtx.clearRect(0,0,88,88); mmCtx.fillStyle='rgba(10,4,0,0.88)'; mmCtx.fillRect(0,0,88,88);
-  const sc=88/40,cx=44,cy=44,wx=x=>cx+x*sc,wz=z=>cy+z*sc;
-  mmCtx.strokeStyle='rgba(255,180,50,0.35)'; mmCtx.lineWidth=1.5; mmCtx.strokeRect(wx(-14),wz(-14),28*sc,28*sc);
-  G.tableZones.forEach(tz=>{ mmCtx.fillStyle=tz.occupied?'#FF6B35':'#8B4513'; mmCtx.fillRect(wx(tz.pos.x-1),wz(tz.pos.z-0.7),2*sc,1.4*sc); });
-  G.npcs.forEach(n=>{ mmCtx.fillStyle=n.colHex||'#4ECDC4'; mmCtx.beginPath(); mmCtx.arc(wx(n.mesh.position.x),wz(n.mesh.position.z),3,0,Math.PI*2); mmCtx.fill(); });
-  // Other players
-  Object.values(otherPlayers).forEach(op=>{ mmCtx.fillStyle=op.data.color||'#4ECDC4'; mmCtx.beginPath(); mmCtx.arc(wx(op.mesh.position.x),wz(op.mesh.position.z),4,0,Math.PI*2); mmCtx.fill(); mmCtx.strokeStyle='rgba(255,255,255,0.6)'; mmCtx.lineWidth=1; mmCtx.stroke(); });
-  mmCtx.fillStyle=G.playerColor||'#FFD93D'; mmCtx.beginPath(); mmCtx.arc(wx(playerGroup.position.x),wz(playerGroup.position.z),4,0,Math.PI*2); mmCtx.fill();
-  mmCtx.strokeStyle='white'; mmCtx.lineWidth=1.5; mmCtx.stroke();
+// ── NEW CHAT ──
+function openNewChat() { document.getElementById('modal-chat').classList.add('open'); document.getElementById('search-user-inp').value = ''; document.getElementById('user-search-results').innerHTML = ''; }
+
+let searchTimer;
+function searchUser(q) {
+  clearTimeout(searchTimer);
+  if (!q) { document.getElementById('user-search-results').innerHTML = ''; return; }
+  searchTimer = setTimeout(async () => {
+    const { data } = await db.from('users').select('*').or(`username.ilike.%${q}%,phone.ilike.%${q}%`).neq('id', ME.id).limit(5);
+    const el = document.getElementById('user-search-results');
+    if (!data || !data.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">Не найдено</div>'; return; }
+    el.innerHTML = data.map(u => `<div onclick="startDM('${u.id}','${esc(u.username)}')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:10px;cursor:pointer">
+      <div class="chat-avatar ${u.avatar_color||colorFor(u.username)}" style="width:34px;height:34px;font-size:14px">${u.username[0].toUpperCase()}</div>
+      <div><div style="font-size:14px;font-weight:700">@${esc(u.username)}</div><div style="font-size:11px;color:var(--muted)">${esc(u.phone)}</div></div>
+    </div>`).join('');
+  }, 300);
 }
 
-// ═══════════════════════════════════════════════════════
-//  INPUT
-// ═══════════════════════════════════════════════════════
-window.addEventListener('keydown',e=>{ G.keys[e.code]=true; if(e.code==='KeyE') doAction(); });
-window.addEventListener('keyup',e=>G.keys[e.code]=false);
-document.getElementById('gameCanvas').addEventListener('click',()=>{ if(G.started) document.getElementById('gameCanvas').requestPointerLock(); });
-document.addEventListener('pointerlockchange',()=>{ G.pointerLocked=document.pointerLockElement===document.getElementById('gameCanvas'); });
-document.addEventListener('mousemove',e=>{ if(!G.pointerLocked) return; G.yaw-=e.movementX*0.002; G.pitch=Math.max(-0.4,Math.min(0.9,G.pitch-e.movementY*0.002)); });
-document.getElementById('actionBtn').addEventListener('click',doAction);
-document.getElementById('actionBtn').addEventListener('touchend',e=>{e.preventDefault();doAction();});
-document.getElementById('bagBtn').addEventListener('click',()=>{ renderBag(); document.getElementById('inventory').classList.toggle('open'); });
-document.getElementById('invClose').addEventListener('click',()=>document.getElementById('inventory').classList.remove('open'));
-document.getElementById('storeBtn').addEventListener('click',()=>{ renderStore(); document.getElementById('storePanel').classList.add('open'); });
-document.getElementById('storeClose').addEventListener('click',()=>document.getElementById('storePanel').classList.remove('open'));
-document.getElementById('storePanel').addEventListener('click',e=>{ if(e.target===document.getElementById('storePanel')) document.getElementById('storePanel').classList.remove('open'); });
-
-const jArea=document.getElementById('joystickArea'),jKnob=document.getElementById('joystickKnob');
-let jTouchId=null;
-jArea.addEventListener('touchstart',e=>{
-  e.preventDefault(); const t=e.changedTouches[0]; jTouchId=t.identifier;
-  const r=jArea.getBoundingClientRect(); G.joystick.startX=r.left+r.width/2; G.joystick.startY=r.top+r.height/2; G.joystick.active=true;
-},{passive:false});
-window.addEventListener('touchmove',e=>{
-  for(const t of e.changedTouches){ if(t.identifier!==jTouchId) continue;
-    const dx=t.clientX-G.joystick.startX,dy=t.clientY-G.joystick.startY;
-    const mag=Math.min(45,Math.sqrt(dx*dx+dy*dy)),angle=Math.atan2(dy,dx);
-    G.joystick.x=Math.cos(angle)*(mag/45); G.joystick.y=Math.sin(angle)*(mag/45);
-    jKnob.style.transform=`translate(calc(-50% + ${Math.cos(angle)*mag}px), calc(-50% + ${Math.sin(angle)*mag}px))`;
+async function startDM(userId, username) {
+  closeModal('modal-chat');
+  // Check if DM already exists
+  const { data: myChats } = await db.from('chat_members').select('chat_id').eq('user_id', ME.id);
+  const { data: theirChats } = await db.from('chat_members').select('chat_id').eq('user_id', userId);
+  const myChatIds = (myChats||[]).map(m=>m.chat_id);
+  const theirChatIds = (theirChats||[]).map(m=>m.chat_id);
+  const common = myChatIds.filter(id => theirChatIds.includes(id));
+  if (common.length) {
+    const { data: existing } = await db.from('chats').select('*').in('id', common).eq('is_group', false).single();
+    if (existing) { if (!allChats.find(c=>c.id===existing.id)) allChats.unshift(existing); renderChatList(allChats); openChat(existing.id); return; }
   }
-},{passive:true});
-window.addEventListener('touchend',e=>{
-  for(const t of e.changedTouches){ if(t.identifier===jTouchId){ G.joystick.active=false; G.joystick.x=0; G.joystick.y=0; jKnob.style.transform='translate(-50%,-50%)'; } }
+  // Create new DM
+  const { data: chat } = await db.from('chats').insert({ name: username, is_group: false, created_by: ME.id }).select().single();
+  await db.from('chat_members').insert([{ chat_id: chat.id, user_id: ME.id }, { chat_id: chat.id, user_id: userId }]);
+  allChats.unshift(chat);
+  renderChatList(allChats);
+  openChat(chat.id);
+}
+
+// ── NEW GROUP ──
+function openNewGroup() { groupMembers = []; document.getElementById('modal-group').classList.add('open'); document.getElementById('group-name-inp').value = ''; document.getElementById('group-user-inp').value = ''; document.getElementById('group-search-results').innerHTML = ''; document.getElementById('group-members-list').innerHTML = ''; }
+
+function searchGroupUser(q) {
+  clearTimeout(searchTimer);
+  if (!q) { document.getElementById('group-search-results').innerHTML = ''; return; }
+  searchTimer = setTimeout(async () => {
+    const { data } = await db.from('users').select('*').ilike('username', `%${q}%`).neq('id', ME.id).limit(5);
+    const el = document.getElementById('group-search-results');
+    if (!data || !data.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px">Не найдено</div>'; return; }
+    el.innerHTML = data.map(u => `<div onclick="addGroupMember('${u.id}','${esc(u.username)}','${u.avatar_color||colorFor(u.username)}')" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:10px;cursor:pointer">
+      <div class="chat-avatar ${u.avatar_color||colorFor(u.username)}" style="width:28px;height:28px;font-size:12px">${u.username[0].toUpperCase()}</div>
+      <div style="font-size:13px;font-weight:600">@${esc(u.username)}</div>
+    </div>`).join('');
+  }, 300);
+}
+
+function addGroupMember(id, username, color) {
+  if (groupMembers.find(m=>m.id===id)) return;
+  groupMembers.push({id, username, color});
+  document.getElementById('group-user-inp').value = '';
+  document.getElementById('group-search-results').innerHTML = '';
+  renderGroupMembers();
+}
+
+function removeGroupMember(id) {
+  groupMembers = groupMembers.filter(m=>m.id!==id);
+  renderGroupMembers();
+}
+
+function renderGroupMembers() {
+  document.getElementById('group-members-list').innerHTML = groupMembers.map(m =>
+    `<div style="display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:8px;padding:4px 8px;font-size:12px">
+      @${esc(m.username)} <span onclick="removeGroupMember('${m.id}')" style="cursor:pointer;color:var(--accent2);margin-left:2px">✕</span>
+    </div>`).join('');
+}
+
+async function createGroup() {
+  const name = document.getElementById('group-name-inp').value.trim();
+  if (!name) { document.getElementById('group-err').textContent = 'Введи название'; return; }
+  if (groupMembers.length === 0) { document.getElementById('group-err').textContent = 'Добавь участников'; return; }
+  document.getElementById('group-err').textContent = '';
+  const { data: chat } = await db.from('chats').insert({ name, is_group: true, created_by: ME.id }).select().single();
+  const members = [{ chat_id: chat.id, user_id: ME.id }, ...groupMembers.map(m => ({ chat_id: chat.id, user_id: m.id }))];
+  await db.from('chat_members').insert(members);
+  // Welcome message
+  await db.from('messages').insert({ chat_id: chat.id, user_id: ME.id, username: ME.username, text: `Группа "${name}" создана! 🎉`, avatar_color: ME.avatar_color });
+  allChats.unshift(chat);
+  renderChatList(allChats);
+  closeModal('modal-group');
+  openChat(chat.id);
+}
+
+// ── REALTIME for new chats ──
+function subscribeToNewMessages() {
+  db.channel('global-messages')
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, async p => {
+      if (p.new.chat_id !== currentChatId) {
+        // Reload chats to update
+        if (!allChats.find(c=>c.id===p.new.chat_id)) await loadChats();
+      }
+    }).subscribe();
+}
+
+// ── UTILS ──
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function backToSidebar() { document.getElementById('sidebar').classList.remove('hidden'); }
+
+document.getElementById('msg-inp').addEventListener('keydown', e => {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
 });
-let camTouch=null,camTouchPrev=null;
-window.addEventListener('touchstart',e=>{ for(const t of e.changedTouches){ if(t.clientX>innerWidth/2&&!camTouch){camTouch=t.identifier;camTouchPrev={x:t.clientX,y:t.clientY};} }},{passive:true});
-window.addEventListener('touchmove',e=>{ for(const t of e.changedTouches){ if(t.identifier===camTouch&&camTouchPrev){G.yaw-=(t.clientX-camTouchPrev.x)*0.003;G.pitch=Math.max(-0.4,Math.min(0.9,G.pitch-(t.clientY-camTouchPrev.y)*0.003));camTouchPrev={x:t.clientX,y:t.clientY};} }},{passive:true});
-window.addEventListener('touchend',e=>{ for(const t of e.changedTouches){ if(t.identifier===camTouch){camTouch=null;camTouchPrev=null;} } });
-
-// ═══════════════════════════════════════════════════════
-//  NAME SCREEN SETUP
-// ═══════════════════════════════════════════════════════
-PCOLORS.forEach((c,i)=>{
-  const d=document.createElement('div'); d.className='copt'+(i===0?' sel':''); d.style.background=c;
-  d.addEventListener('click',()=>{ document.querySelectorAll('.copt').forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); G.selectedColorIdx=i; G.playerColor=PCOLORS[i]; });
-  document.getElementById('colorPicker').appendChild(d);
+document.getElementById('msg-inp').addEventListener('input', function() {
+  this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,100)+'px';
 });
-document.querySelectorAll('.skin-opt').forEach(el=>{
-  el.addEventListener('click',()=>{
-    document.querySelectorAll('.skin-opt').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); G.selectedSkin=el.dataset.skin;
-    document.getElementById('colorLabel').style.display=G.selectedSkin==='normal'?'block':'none';
-    document.getElementById('colorPicker').style.display=G.selectedSkin==='normal'?'flex':'none';
-  });
+document.getElementById('phone-inp').addEventListener('keydown', e => { if(e.key==='Enter') checkPhone(); });
+document.getElementById('username-inp').addEventListener('keydown', e => { if(e.key==='Enter') register(); });
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); });
 });
-
-// ═══════════════════════════════════════════════════════
-//  GAME START
-// ═══════════════════════════════════════════════════════
-function playOffline(){
-  currentRoomId = null;
-  startGame();
-}
-
-function startGame(){
-  const v=document.getElementById('nameInput').value.trim();
-  G.playerName=v||'Игрок';
-  if(G.playerName.toLowerCase()==='панда') G.selectedSkin='panda';
-  G.playerColor=PCOLORS[G.selectedColorIdx];
-  buildPlayer(G.playerColor,G.selectedSkin);
-
-  document.getElementById('lobbyScreen').style.display='none';
-  document.getElementById('hudTop').style.display='flex';
-  document.getElementById('bagBtn').style.display='flex';
-  document.getElementById('inventory').style.display='flex';
-  document.getElementById('ordersPanel').style.display='block';
-  document.getElementById('storeBtn').style.display='flex';
-  document.getElementById('joystickArea').style.display='block';
-  document.getElementById('minimap').style.display='block';
-  G.started=true;
-
-  if(onlineMode && currentRoomId) startSync();
-  spawnFlash();
-  notify(currentRoomId ? `🌐 Комната ${currentRoomId} — играй вместе!` : '☕ Одиночная игра!','g');
-  setTimeout(()=>spawnNPCWave(),1500);
-  setInterval(()=>spawnNPCWave(),15000);
-  setInterval(updatePatience,1000);
-  updateHUD();
-}
-
-function spawnNPCWave(){
-  const free=G.tableZones.filter(t=>!t.occupied);
-  const count=Math.min(free.length,1+Math.floor(Math.random()*2));
-  for(let i=0;i<count;i++) if(free[i]) createNPC(free[i]);
-}
-function updatePatience(){
-  G.orders.forEach(ord=>{
-    if(ord.npc.state==='leaving') return;
-    ord.npc.patience=Math.max(0,ord.npc.patience-2);
-    if(ord.npc.patience<=0){ notify(`😤 ${ord.npc.name} ушёл!`,'r'); removeNPC(ord.npc); }
-  });
-  renderOrders();
-}
-
-// ═══════════════════════════════════════════════════════
-//  GAME LOOP
-// ═══════════════════════════════════════════════════════
-const GRAVITY=-20,JUMP=9,PSPEED=6;
-function animate(now){
-  requestAnimationFrame(animate);
-  const dt=Math.min((now-G.lastTime)/1000,0.05); G.lastTime=now;
-  G.npcs.forEach(npc=>{
-    npc.bobT+=dt*2;
-    if(npc.state!=='leaving'){ npc.mesh.rotation.y+=dt*0.5; npc.mesh.position.y=Math.sin(npc.bobT)*0.04; }
-    else npc.mesh.position.z+=dt*2;
-    if(npc.bubbleMesh) npc.bubbleMesh.lookAt(camera.position);
-  });
-  if(!G.started){ renderer.render(scene,camera); return; }
-  const spd=G.keys['ShiftLeft']||G.keys['ShiftRight']?PSPEED*1.7:PSPEED;
-  let mx=0,mz=0;
-  if(G.keys['KeyW']||G.keys['ArrowUp']) mz-=1;
-  if(G.keys['KeyS']||G.keys['ArrowDown']) mz+=1;
-  if(G.keys['KeyA']||G.keys['ArrowLeft']) mx-=1;
-  if(G.keys['KeyD']||G.keys['ArrowRight']) mx+=1;
-  if(G.joystick.active){ mx+=G.joystick.x; mz+=G.joystick.y; }
-  const mlen=Math.sqrt(mx*mx+mz*mz);
-  if(mlen>0){ mx/=mlen; mz/=mlen; }
-  const cosY=Math.cos(G.yaw),sinY=Math.sin(G.yaw),wx=mx*cosY+mz*sinY,wz=-mx*sinY+mz*cosY;
-  playerGroup.position.x=Math.max(-13,Math.min(13,playerGroup.position.x+wx*spd*dt));
-  playerGroup.position.z=Math.max(-13,Math.min(13,playerGroup.position.z+wz*spd*dt));
-  G.velY+=GRAVITY*dt;
-  if(G.keys['Space']&&G.onGround){ G.velY=JUMP; G.onGround=false; }
-  playerGroup.position.y+=G.velY*dt;
-  if(playerGroup.position.y<=0.05){ playerGroup.position.y=0.05; G.velY=0; G.onGround=true; }
-  if(mlen>0) playerGroup.rotation.y=Math.atan2(wx,wz);
-  if(mlen>0){
-    const t=now*0.007;
-    ['leg0','leg1','arm0','arm1'].forEach((nm,i)=>{
-      const c=playerGroup.children.find(x=>x.name===nm);
-      if(c) c.position.y=(i<2?0.45:1.05)+Math.sin(t+(i%2===0?0:Math.PI))*0.15;
-    });
-  }
-  if(playerGroup.position.y<-5){ playerGroup.position.set(0,0.05,0); G.velY=0; spawnFlash(); }
-  const camD=6,camH=2.5+G.pitch*3;
-  camera.position.lerp(new THREE.Vector3(playerGroup.position.x+Math.sin(G.yaw)*camD,playerGroup.position.y+camH,playerGroup.position.z+Math.cos(G.yaw)*camD),0.12);
-  camera.lookAt(playerGroup.position.x,playerGroup.position.y+1.5,playerGroup.position.z);
-  checkInteractables();
-  renderer.render(scene,camera);
-  drawNametags();
-  drawMinimap();
-}
-
-window.addEventListener('resize',()=>{
-  renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
-  ntCanvas.width=innerWidth; ntCanvas.height=innerHeight;
-});
-window.addEventListener('beforeunload',()=>stopSync());
-
-requestAnimationFrame(animate);
 </script>
 </body>
 </html>
