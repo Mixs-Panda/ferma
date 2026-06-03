@@ -270,7 +270,7 @@ async function register() {
   document.getElementById('reg-err').textContent = '';
   const color = colorFor(username);
   const { data, error } = await db.from('users').insert({ username, phone, avatar_color: color }).select().single();
-  if (error) { document.getElementById('reg-err').textContent = 'Никнейм занят, попробуй другой'; return; }
+  if (error) { document.getElementById('reg-err').textContent = 'Ошибка: ' + error.message; return; }
   ME = data;
   enterApp();
 }
